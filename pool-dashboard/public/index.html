@@ -33,6 +33,10 @@
       <span class="dot-sep"></span>
       <span id="heroHeat">–</span>
     </div>
+    <button class="pool-btn" id="poolBtn" hidden>
+      <span class="pool-btn-state" id="poolBtnState">OFF</span>
+      <span class="pool-btn-label" id="poolBtnLabel">Turn pool on</span>
+    </button>
   </section>
 
   <!-- Pump -->
@@ -114,7 +118,8 @@
 
   <!-- Schedules -->
   <section class="card sched-card">
-    <div class="card-head"><div class="label">Schedules</div></div>
+    <div class="card-head"><div class="label">Schedules</div>
+      <button class="btn ghost" id="schedAdd">+ Add</button></div>
     <div id="schedList" class="rows"></div>
     <div class="empty-note" id="schedEmpty" hidden>No schedules reported yet — they load from the panel.</div>
   </section>

@@ -121,10 +121,20 @@
 
     const unit = '°' + (s.units || 'F');
     $('heroUnit').textContent = unit;
-    $('heroLabel').textContent = (s.body ? s.body.name : 'Pool') + ' temperature';
+    $('heroLabel').textContent = (s.body ? s.body.name : 'Pool') + ' temperature' +
+      (s.body && s.body.temp != null && !s.body.tempIsLive ? ' (last reading)' : '');
     $('heroTemp').textContent = s.body && s.body.temp != null ? fmt1(s.body.temp) : '--';
     $('heroAir').textContent = `Air ${s.airTemp != null ? fmt1(s.airTemp) + unit : '--'}`;
     $('heroHeat').textContent = s.body && s.body.heatStatus ? `Heater: ${s.body.heatStatus}` : 'Heater: –';
+
+    // hero pool on/off button (overrides schedules, same as panel button)
+    const pc = s.poolCircuit;
+    $('poolBtn').hidden = !pc;
+    if (pc) {
+      $('poolBtn').classList.toggle('on', pc.isOn);
+      $('poolBtnState').textContent = pc.isOn ? 'ON' : 'OFF';
+      $('poolBtnLabel').textContent = pc.isOn ? 'Pool is running — tap to turn off' : 'Turn pool on';
+    }
 
     // pump
     const p = s.pump;
@@ -206,6 +216,15 @@
     slider.style.setProperty('--fill', slider.value + '%');
     $('chlorPctLabel').textContent = slider.value + '%';
   }
+  $('poolBtn').addEventListener('click', async () => {
+    const pc = cur && cur.poolCircuit;
+    if (!pc) return;
+    try {
+      await put('/njspc/state/circuit/setState', { id: pc.id, state: !pc.isOn });
+      toast(pc.isOn ? 'Pool turning off' : 'Pool turning on');
+    } catch { toast('Pool toggle failed', false); }
+  });
+
   $('chlorSlider').addEventListener('input', () => { chlorDirty = true; syncSlider(); });
   $('chlorApply').addEventListener('click', async () => {
     try {
@@ -291,26 +310,85 @@
     }
   }
 
-  /* ---------- schedules ---------- */
-  const ALLDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+  /* ---------- schedules (editable — writes the panel via njsPC) ---------- */
+  // Bit values from njsPC /config/options/schedules: Sun=1 ... Sat=64
+  const DAYBITS = [['S', 1], ['M', 2], ['T', 4], ['W', 8], ['T', 16], ['F', 32], ['S', 64]];
+  let schedKey = '';
+  const minsToHHMM = m => `${String(Math.floor(m / 60)).padStart(2, '0')}:${String(m % 60).padStart(2, '0')}`;
+  const hhmmToMins = v => { const [h, m] = v.split(':').map(Number); return h * 60 + m; };
+
+  async function saveSchedule(payload, row) {
+    try {
+      await put('/njspc/config/schedule', payload);
+      toast('Schedule saved — panel updated');
+      if (row) row.classList.remove('dirty');
+      schedKey = '';
+    } catch { toast('Schedule save failed', false); }
+  }
+
   function renderSchedules(s) {
     const host = $('schedList');
     $('schedEmpty').hidden = s.schedules.length > 0;
+    const key = JSON.stringify(s.schedules);
+    if (key === schedKey) return;
+    if (host.querySelector('.sched-row.dirty') || host.contains(document.activeElement)) return; // mid-edit
+    schedKey = key;
     host.innerHTML = '';
     for (const sc of s.schedules) {
-      const days = ALLDAYS.map(d =>
-        `<span class="day ${sc.days.includes(d) ? 'on' : ''}">${d[0]}</span>`).join('');
       const row = document.createElement('div');
-      row.className = 'row';
+      row.className = 'sched-row';
+      let daysVal = sc.daysVal || 0;
       row.innerHTML = `
-        <div>
-          <div class="name">${sc.circuit || 'Schedule ' + sc.id}</div>
-          <div class="meta">${days}</div>
-        </div>
-        <div class="sched-time">${minToTime(sc.startTime)} – ${minToTime(sc.endTime)}</div>`;
+        <span class="name">${sc.circuit || 'Schedule ' + sc.id}</span>
+        <span class="sched-onchip ${sc.isOn ? 'on' : ''}">${sc.isOn ? 'active now' : 'idle'}</span>
+        <input type="time" class="t-start" value="${minsToHHMM(sc.startTime)}">
+        <span class="via">–</span>
+        <input type="time" class="t-end" value="${minsToHHMM(sc.endTime)}">
+        <span class="sched-days"></span>
+        <span class="sched-actions">
+          <button class="btn sched-save">Save</button>
+          <button class="icon-btn sched-del" title="Delete schedule">✕</button>
+        </span>`;
+      const daysHost = row.querySelector('.sched-days');
+      for (const [label, bit] of DAYBITS) {
+        const b = document.createElement('button');
+        b.className = 'dayt' + ((daysVal & bit) ? ' on' : '');
+        b.textContent = label;
+        b.addEventListener('click', () => {
+          daysVal ^= bit;
+          b.classList.toggle('on', !!(daysVal & bit));
+          row.classList.add('dirty');
+        });
+        daysHost.appendChild(b);
+      }
+      row.querySelectorAll('input[type=time]').forEach(i =>
+        i.addEventListener('change', () => row.classList.add('dirty')));
+      row.querySelector('.sched-save').addEventListener('click', () => saveSchedule({
+        id: sc.id, circuit: sc.circuitId,
+        startTime: hhmmToMins(row.querySelector('.t-start').value),
+        endTime: hhmmToMins(row.querySelector('.t-end').value),
+        scheduleDays: daysVal, scheduleType: 0,
+        startTimeType: 0, endTimeType: 0,
+        heatSource: sc.heatSource != null ? sc.heatSource : 32
+      }, row));
+      row.querySelector('.sched-del').addEventListener('click', async () => {
+        if (!confirm(`Delete the ${sc.circuit} schedule ${minsToHHMM(sc.startTime)}–${minsToHHMM(sc.endTime)}?`)) return;
+        try {
+          await api('/njspc/config/schedule', { method: 'DELETE',
+            headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: sc.id }) });
+          toast('Schedule deleted'); schedKey = '';
+        } catch { toast('Delete failed', false); }
+      });
       host.appendChild(row);
     }
   }
+
+  $('schedAdd').addEventListener('click', () => {
+    const circ = (cur && cur.poolCircuit) ? cur.poolCircuit.id : 6;
+    saveSchedule({ circuit: circ, startTime: 480, endTime: 600,
+                   scheduleDays: 127, scheduleType: 0,
+                   startTimeType: 0, endTimeType: 0, heatSource: 32 });
+  });
 
   /* ---------- summary / cost ---------- */
   async function loadSummary() {

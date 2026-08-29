@@ -104,6 +104,9 @@ function summarize() {
   const body = (s.temps && s.temps.bodies && s.temps.bodies[0]) || null;
   const pump = (s.pumps && s.pumps[0]) || null;
   const chlor = (s.chlorinators && s.chlorinators[0]) || null;
+  // The main Pool circuit (body.circuit, e.g. id 6 on EasyTouch) is flagged
+  // showInFeatures:false by the panel — surface it explicitly for the hero button.
+  const poolCirc = body && (s.circuits || []).find(c => c.id === body.circuit) || null;
   return {
     connected: njspcOk,
     lastStateAt,
@@ -111,8 +114,13 @@ function summarize() {
     status: (s.status && s.status.desc) || 'unknown',
     airTemp: s.temps ? s.temps.air : null,
     units: (s.temps && s.temps.units && s.temps.units.name) || 'F',
-    body: body && { name: body.name, temp: body.temp, setPoint: body.setPoint, isOn: body.isOn,
+    body: body && { name: body.name,
+                    // body.temp only reports while the pump circulates; fall back to the raw water sensor
+                    temp: body.temp != null ? body.temp : (s.temps ? s.temps.waterSensor1 : null),
+                    tempIsLive: body.temp != null,
+                    setPoint: body.setPoint, isOn: body.isOn,
                     heatMode: body.heatMode && body.heatMode.desc, heatStatus: body.heatStatus && body.heatStatus.desc },
+    poolCircuit: poolCirc && { id: poolCirc.id, name: poolCirc.name, isOn: !!poolCirc.isOn },
     pump: pump && { id: pump.id, name: pump.name, rpm: pump.rpm || 0, watts: pump.watts || 0,
                     flow: pump.flow || null, status: pump.status && pump.status.desc },
     pumpPrograms: pumpPrograms(pump),
@@ -126,13 +134,14 @@ function summarize() {
       lightingTheme: c.lightingTheme && { val: c.lightingTheme.val, desc: c.lightingTheme.desc }
     })),
     features: (s.features || []).map(f => ({ id: f.id, name: f.name, isOn: !!f.isOn })),
-    schedules: (s.schedules || []).map(sc => ({
-      id: sc.id,
-      circuit: sc.circuit && (sc.circuit.name || sc.circuit.desc),
-      startTime: sc.startTime, endTime: sc.endTime,
-      days: sc.scheduleDays && sc.scheduleDays.days ? sc.scheduleDays.days.map(d => d.name.slice(0, 3)) : [],
-      isOn: !!sc.isOn, disabled: !!sc.disabled
-    })),
+    // Config is the editable truth (plain minute/bitmask fields); state adds isOn.
+    schedules: ((config && config.schedules) || []).filter(sc => sc.isActive !== false).map(sc => {
+      const st = (s.schedules || []).find(x => x.id === sc.id) || {};
+      return { id: sc.id, circuitId: sc.circuit, circuit: circuitName(sc.circuit),
+               startTime: sc.startTime, endTime: sc.endTime,
+               daysVal: sc.scheduleDays, heatSource: sc.heatSource,
+               isOn: !!st.isOn };
+    }),
     kwhRate: cfg.kwhRate
   };
 }

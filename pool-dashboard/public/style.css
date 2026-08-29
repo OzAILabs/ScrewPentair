@@ -159,11 +159,52 @@ input[type=range]:disabled::-webkit-slider-thumb { border-color: var(--baseline)
 }
 .swatch.active { border-color: #fff; }
 
+/* hero pool button */
+.pool-btn {
+  margin-top: 14px; width: 100%;
+  display: flex; align-items: center; gap: 14px;
+  background: var(--surface-2); border: 1px solid var(--border); border-radius: 14px;
+  padding: 12px 16px; cursor: pointer; color: var(--ink);
+  font-family: inherit; text-align: left; transition: background .18s, border-color .18s;
+}
+.pool-btn-state {
+  font-size: 15px; font-weight: 700; letter-spacing: .06em;
+  border-radius: 9px; padding: 8px 14px;
+  background: var(--baseline); color: var(--ink-2); transition: all .18s;
+}
+.pool-btn.on { border-color: rgba(57,135,229,.5); background: rgba(57,135,229,.12); }
+.pool-btn.on .pool-btn-state { background: var(--series-1); color: #fff; box-shadow: 0 0 14px rgba(57,135,229,.45); }
+.pool-btn-label { color: var(--ink-2); font-size: 14px; }
+.pool-btn:active { transform: scale(.99); }
+
 /* schedules */
-.sched-time { font-variant-numeric: tabular-nums; color: var(--ink-2); font-size: 13.5px; }
-.day { display: inline-block; font-size: 10.5px; color: var(--muted); border: 1px solid var(--grid);
-       border-radius: 5px; padding: 1px 5px; margin-left: 3px; }
-.day.on { color: var(--ink-2); border-color: var(--baseline); background: var(--surface-2); }
+.sched-row { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px;
+             padding: 12px 2px; border-bottom: 1px solid var(--grid); }
+.sched-row:last-child { border-bottom: 0; }
+.sched-row .name { font-size: 14.5px; min-width: 70px; }
+.sched-row input[type=time] {
+  background: var(--surface-2); color: var(--ink); border: 1px solid var(--border);
+  border-radius: 8px; padding: 6px 8px; font-size: 13.5px; font-family: inherit;
+  font-variant-numeric: tabular-nums; color-scheme: dark;
+}
+.sched-days { display: flex; gap: 4px; }
+.dayt {
+  width: 26px; height: 26px; border-radius: 7px; border: 1px solid var(--grid);
+  background: transparent; color: var(--muted); font-size: 11px; font-weight: 600;
+  cursor: pointer; font-family: inherit;
+}
+.dayt.on { background: rgba(57,135,229,.18); border-color: rgba(57,135,229,.5); color: var(--ink); }
+.sched-actions { display: flex; gap: 8px; margin-left: auto; align-items: center; }
+.icon-btn {
+  background: transparent; border: 1px solid var(--border); color: var(--muted);
+  border-radius: 8px; width: 30px; height: 30px; cursor: pointer; font-size: 14px;
+}
+.icon-btn:hover { color: var(--ink); }
+.sched-save { display: none; }
+.sched-row.dirty .sched-save { display: inline-block; }
+.sched-onchip { font-size: 10.5px; color: var(--muted); border: 1px solid var(--grid);
+                border-radius: 999px; padding: 2px 8px; }
+.sched-onchip.on { color: #fff; background: rgba(12,163,12,.25); border-color: rgba(12,163,12,.5); }
 
 /* settings */
 .settings-row { display: flex; align-items: center; gap: 10px; }
