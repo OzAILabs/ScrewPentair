@@ -147,9 +147,58 @@
       syncSlider();
     }
 
+    renderPumpPrograms(s);
     renderLights(s);
     renderCircuits(s);
     renderSchedules(s);
+  }
+
+  /* ---------- pump programmed speeds (the panel's circuit-speed table) ---------- */
+  let progsDragging = false;
+  let progsKey = '';
+  function renderPumpPrograms(s) {
+    const progs = s.pumpPrograms || [];
+    $('progsBlock').hidden = progs.length === 0;
+    if (!progs.length) { progsKey = ''; return; }
+    const key = JSON.stringify(progs);
+    if (progsDragging || key === progsKey) return;   // don't fight the user's thumb
+    progsKey = key;
+    const host = $('pumpProgs');
+    host.innerHTML = '';
+    for (const p of progs) {
+      const isFlow = (p.units || '').toLowerCase().includes('gpm') || (p.speed == null && p.flow != null);
+      const val = isFlow ? p.flow : p.speed;
+      const [min, max, step, unit] = isFlow ? [15, 130, 1, 'GPM'] : [450, 3450, 10, 'RPM'];
+      const row = document.createElement('div');
+      row.className = 'prog-row';
+      row.innerHTML = `
+        <span class="pname" title="${p.name}">${p.name}</span>
+        <input type="range" min="${min}" max="${max}" step="${step}" value="${val ?? min}">
+        <span class="pval"><span class="v">${val != null ? val.toLocaleString() : '--'}</span><span class="u">${unit}</span></span>`;
+      const slider = row.querySelector('input');
+      const vlabel = row.querySelector('.v');
+      const paint = () => {
+        slider.style.setProperty('--fill', (100 * (slider.value - min) / (max - min)) + '%');
+        vlabel.textContent = parseInt(slider.value, 10).toLocaleString();
+      };
+      paint();
+      slider.addEventListener('pointerdown', () => { progsDragging = true; });
+      slider.addEventListener('input', () => { progsDragging = true; paint(); });
+      slider.addEventListener('pointerup', () => {   // change (if any) fires first
+        setTimeout(() => { progsDragging = false; }, 400);
+      });
+      slider.addEventListener('change', async () => {
+        const v = parseInt(slider.value, 10);
+        try {
+          const body = { pumpId: cur.pump.id, circuitId: p.circuitId };
+          body[isFlow ? 'flow' : 'speed'] = v;
+          await put('/njspc/config/pumpCircuit', body);
+          toast(`${p.name}: ${v.toLocaleString()} ${unit}`);
+        } catch { toast(`Failed to set ${p.name}`, false); }
+        progsDragging = false; progsKey = '';   // allow next state to re-sync
+      });
+      host.appendChild(row);
+    }
   }
 
   function syncSlider() {

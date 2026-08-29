@@ -36,14 +36,19 @@ const qSince = db.prepare('SELECT COUNT(*) AS n, SUM(watts) AS sumWatts FROM sam
 
 /* ---------------- njsPC state mirror ---------------- */
 let state = null;            // last full /state/all payload
+let config = null;           // last full /config/all payload (pump speed programs live here)
 let njspcOk = false;
 let lastStateAt = 0;
 
 async function refreshState() {
   try {
-    const r = await fetch(cfg.njspcUrl + '/state/all', { signal: AbortSignal.timeout(8000) });
-    if (!r.ok) throw new Error('http ' + r.status);
-    state = await r.json();
+    const [rs, rc] = await Promise.all([
+      fetch(cfg.njspcUrl + '/state/all', { signal: AbortSignal.timeout(8000) }),
+      fetch(cfg.njspcUrl + '/config/all', { signal: AbortSignal.timeout(8000) })
+    ]);
+    if (!rs.ok) throw new Error('http ' + rs.status);
+    state = await rs.json();
+    if (rc.ok) config = await rc.json();
     njspcOk = true;
     lastStateAt = Date.now();
     broadcast();
@@ -68,6 +73,32 @@ setInterval(refreshState, 30000);
 refreshState();
 
 /* ---------------- summarized view the UI consumes ---------------- */
+function circuitName(circuitId) {
+  const pools = [];
+  if (state) { pools.push(state.circuits || [], state.features || [], state.virtualCircuits || []); }
+  if (config) { pools.push(config.circuits || [], config.features || []); }
+  for (const list of pools) {
+    const hit = list.find(c => c.id === circuitId);
+    if (hit && hit.name) return hit.name;
+  }
+  return 'Circuit ' + circuitId;
+}
+
+function pumpPrograms(pump) {
+  // The pump's circuit-speed table (what the panel actually drives the pump with).
+  // Edited via PUT /config/pumpCircuit {pumpId, circuitId, speed|flow}.
+  if (!pump || !config || !Array.isArray(config.pumps)) return [];
+  const cp = config.pumps.find(p => p.id === pump.id);
+  if (!cp || !Array.isArray(cp.circuits)) return [];
+  return cp.circuits.map(pc => ({
+    circuitId: pc.circuit,
+    name: circuitName(pc.circuit),
+    units: (pc.units && (pc.units.name || pc.units.desc)) || 'rpm',
+    speed: pc.speed != null ? pc.speed : null,
+    flow: pc.flow != null ? pc.flow : null
+  }));
+}
+
 function summarize() {
   const s = state || {};
   const body = (s.temps && s.temps.bodies && s.temps.bodies[0]) || null;
@@ -84,6 +115,7 @@ function summarize() {
                     heatMode: body.heatMode && body.heatMode.desc, heatStatus: body.heatStatus && body.heatStatus.desc },
     pump: pump && { id: pump.id, name: pump.name, rpm: pump.rpm || 0, watts: pump.watts || 0,
                     flow: pump.flow || null, status: pump.status && pump.status.desc },
+    pumpPrograms: pumpPrograms(pump),
     chlorinator: chlor && { id: chlor.id, name: chlor.name, poolSetpoint: chlor.poolSetpoint,
                             currentOutput: chlor.currentOutput, saltLevel: chlor.saltLevel,
                             superChlor: chlor.superChlor, status: chlor.status && chlor.status.desc },
