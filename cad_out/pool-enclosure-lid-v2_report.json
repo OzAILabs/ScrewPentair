@@ -1,0 +1,165 @@
+{
+  "part": "pool-enclosure-lid-v2",
+  "issues": [],
+  "parts": {
+    "lid": {
+      "is_valid": true,
+      "solid_count": 1,
+      "bbox": {
+        "size_x": 105.0,
+        "size_y": 155.0,
+        "size_z": 10.5,
+        "min": [
+          -52.5,
+          -77.5,
+          -0.0
+        ],
+        "max": [
+          52.5,
+          77.5,
+          10.5
+        ]
+      },
+      "volume_mm3": 47558.888,
+      "color": "#f5f5f0",
+      "stl_file": "C:\\AI Stuff\\Claude\\ScrewPentair\\cad_out\\pool-enclosure-lid-v2-lid.stl"
+    },
+    "pi": {
+      "is_valid": true,
+      "solid_count": 1,
+      "bbox": {
+        "size_x": 44.532,
+        "size_y": 32.15,
+        "size_z": 0.6,
+        "min": [
+          -22.251,
+          17.52,
+          0.0
+        ],
+        "max": [
+          22.281,
+          49.67,
+          0.6
+        ]
+      },
+      "volume_mm3": 444.662,
+      "color": "#e8641b",
+      "stl_file": "C:\\AI Stuff\\Claude\\ScrewPentair\\cad_out\\pool-enclosure-lid-v2-pi.stl"
+    },
+    "ink": {
+      "is_valid": true,
+      "solid_count": 38,
+      "bbox": {
+        "size_x": 88.969,
+        "size_y": 37.42,
+        "size_z": 0.6,
+        "min": [
+          -44.487,
+          -43.43,
+          -0.0
+        ],
+        "max": [
+          44.481,
+          -6.01,
+          0.6
+        ]
+      },
+      "volume_mm3": 445.781,
+      "color": "#1a1a1a",
+      "stl_file": "C:\\AI Stuff\\Claude\\ScrewPentair\\cad_out\\pool-enclosure-lid-v2-ink.stl"
+    }
+  },
+  "overlaps_mm3": {
+    "lid&pi": 0.0,
+    "lid&ink": 0.0,
+    "pi&ink": 0.0
+  },
+  "assembly_bbox": {
+    "size_x": 105.0,
+    "size_y": 155.0,
+    "size_z": 10.5,
+    "min": [
+      -52.5,
+      -77.5,
+      -0.0
+    ],
+    "max": [
+      52.5,
+      77.5,
+      10.5
+    ]
+  },
+  "assembly_volume_mm3": 48449.331,
+  "threemf_file": "C:\\AI Stuff\\Claude\\ScrewPentair\\cad_out\\pool-enclosure-lid-v2.3mf",
+  "step_file": "C:\\AI Stuff\\Claude\\ScrewPentair\\cad_out\\pool-enclosure-lid-v2.step",
+  "measurements": {
+    "pi": {
+      "type": "inlay",
+      "size_x": 44.532,
+      "size_y": 32.15,
+      "size_z": 0.6,
+      "min": [
+        -22.251,
+        17.52,
+        0.0
+      ],
+      "max": [
+        22.281,
+        49.67,
+        0.6
+      ],
+      "volume": 444.662
+    },
+    "wordmark": {
+      "type": "inlay",
+      "size_x": 88.969,
+      "size_y": 8.889,
+      "size_z": 0.6,
+      "min": [
+        -44.487,
+        -14.898,
+        -0.0
+      ],
+      "max": [
+        44.481,
+        -6.01,
+        0.6
+      ],
+      "volume": 271.195
+    },
+    "tag1": {
+      "type": "inlay",
+      "size_x": 74.385,
+      "size_y": 5.182,
+      "size_z": 0.6,
+      "min": [
+        -37.428,
+        -30.398,
+        -0.0
+      ],
+      "max": [
+        36.957,
+        -25.216,
+        0.6
+      ],
+      "volume": 99.268
+    },
+    "tag2": {
+      "type": "inlay",
+      "size_x": 57.306,
+      "size_y": 6.532,
+      "size_z": 0.6,
+      "min": [
+        -28.754,
+        -43.43,
+        -0.0
+      ],
+      "max": [
+        28.552,
+        -36.898,
+        0.6
+      ],
+      "volume": 75.319
+    }
+  }
+}
