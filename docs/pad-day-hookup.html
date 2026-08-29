@@ -1,0 +1,332 @@
+<title>Pad Day Hookup</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Barlow:wght@400;500;600&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+  :root {
+    --bg: #f7f6f2;
+    --surface: #ffffff;
+    --ink: #191817;
+    --ink-2: #55524b;
+    --muted: #8a867c;
+    --line: #e3e0d7;
+    --accent: #2456a8;
+    --accent-soft: #e8eef8;
+    --warn-bg: #fdf3e4;
+    --warn-edge: #c07c1d;
+    --ok: #2e7d32;
+    --wire-r: #c03028;
+    --wire-y: #a87e00;
+    --wire-g: #2e7d32;
+    --wire-k: #33302a;
+    --chip-ink: #ffffff;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #161513;
+      --surface: #1f1e1b;
+      --ink: #f2f0ea;
+      --ink-2: #bcb8ad;
+      --muted: #85816f;
+      --line: #34322c;
+      --accent: #6f9fe8;
+      --accent-soft: #232c3c;
+      --warn-bg: #2c2417;
+      --warn-edge: #d9a13f;
+      --ok: #57ab5a;
+      --wire-r: #e05a50;
+      --wire-y: #e3b341;
+      --wire-g: #57ab5a;
+      --wire-k: #a5a196;
+      --chip-ink: #14130f;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #161513;
+    --surface: #1f1e1b;
+    --ink: #f2f0ea;
+    --ink-2: #bcb8ad;
+    --muted: #85816f;
+    --line: #34322c;
+    --accent: #6f9fe8;
+    --accent-soft: #232c3c;
+    --warn-bg: #2c2417;
+    --warn-edge: #d9a13f;
+    --ok: #57ab5a;
+    --wire-r: #e05a50;
+    --wire-y: #e3b341;
+    --wire-g: #57ab5a;
+    --wire-k: #a5a196;
+    --chip-ink: #14130f;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: "Barlow", system-ui, -apple-system, "Segoe UI", sans-serif;
+    font-size: 16px;
+    line-height: 1.55;
+  }
+  .wrap { max-width: 740px; margin: 0 auto; padding: 28px 18px 72px; }
+
+  h1, h2 {
+    font-family: "Barlow Condensed", "Barlow", system-ui, sans-serif;
+    text-wrap: balance;
+    line-height: 1.1;
+    margin: 0;
+  }
+  h1 { font-size: 44px; font-weight: 700; letter-spacing: .3px; }
+  h2 { font-size: 26px; font-weight: 600; margin: 40px 0 12px; }
+  .kicker {
+    font-size: 12.5px; font-weight: 600; letter-spacing: .14em; text-transform: uppercase;
+    color: var(--accent); margin-bottom: 6px;
+  }
+  .lede { color: var(--ink-2); margin: 10px 0 0; max-width: 60ch; }
+
+  code, .mono {
+    font-family: "JetBrains Mono", ui-monospace, Consolas, monospace;
+    font-size: .86em;
+  }
+  code {
+    background: var(--surface); border: 1px solid var(--line);
+    border-radius: 5px; padding: 1px 6px; white-space: nowrap;
+  }
+
+  .callout {
+    display: flex; gap: 12px; align-items: flex-start;
+    background: var(--warn-bg); border-left: 3px solid var(--warn-edge);
+    border-radius: 8px; padding: 12px 16px; margin: 18px 0;
+    font-size: 15px;
+  }
+  .callout strong { font-weight: 600; }
+
+  figure { margin: 22px 0 0; }
+  .fig-scroll { overflow-x: auto; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 10px 6px; }
+  .fig-scroll svg { display: block; min-width: 680px; max-width: 100%; height: auto; margin: 0 auto; }
+  figcaption { color: var(--muted); font-size: 13.5px; margin-top: 8px; padding: 0 4px; }
+
+  table { width: 100%; border-collapse: collapse; margin: 14px 0 4px; font-size: 15px; }
+  th {
+    text-align: left; font-size: 12px; letter-spacing: .1em; text-transform: uppercase;
+    color: var(--muted); font-weight: 600; padding: 6px 10px; border-bottom: 1px solid var(--line);
+  }
+  td { padding: 9px 10px; border-bottom: 1px solid var(--line); vertical-align: middle; }
+  tr:last-child td { border-bottom: none; }
+  .tbl-card { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 4px 8px; overflow-x: auto; }
+
+  .chip {
+    display: inline-block; min-width: 52px; text-align: center;
+    font-family: "JetBrains Mono", monospace; font-size: 11.5px; font-weight: 600;
+    color: var(--chip-ink); border-radius: 5px; padding: 3px 8px;
+  }
+  .chip.r { background: var(--wire-r); }
+  .chip.y { background: var(--wire-y); }
+  .chip.g { background: var(--wire-g); }
+  .chip.k { background: var(--wire-k); color: #fff; }
+  :root[data-theme="dark"] .chip.k, :root:not([data-theme="light"]) .chip.k { color: var(--chip-ink); }
+  .via { color: var(--muted); font-size: 13px; }
+
+  ol.steps { list-style: none; counter-reset: step; margin: 14px 0 0; padding: 0; }
+  ol.steps > li {
+    counter-increment: step;
+    display: grid; grid-template-columns: 40px 1fr; gap: 14px;
+    padding: 14px 0; border-bottom: 1px solid var(--line);
+  }
+  ol.steps > li:last-child { border-bottom: none; }
+  ol.steps > li::before {
+    content: counter(step);
+    font-family: "Barlow Condensed", sans-serif; font-weight: 700; font-size: 22px;
+    color: var(--accent); background: var(--accent-soft);
+    width: 40px; height: 40px; border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .steps h3 { margin: 0 0 3px; font-size: 16.5px; font-weight: 600; line-height: 1.3; padding-top: 8px; }
+  .steps p { margin: 0; color: var(--ink-2); font-size: 15px; }
+
+  .done {
+    background: var(--surface); border: 1px solid var(--line); border-radius: 12px;
+    padding: 16px 18px; margin-top: 14px;
+  }
+  .done ul { margin: 8px 0 0; padding-left: 20px; color: var(--ink-2); font-size: 15px; }
+  .done li { margin: 4px 0; }
+  .done .ok-mark { color: var(--ok); font-weight: 600; }
+</style>
+
+<div class="wrap">
+  <div class="kicker">ScrewPentair · Phase 2</div>
+  <h1>Pad Day Hookup</h1>
+  <p class="lede">Five wires, two plugs, one meter check. Everything lands on the EasyTouch COM
+  terminal block in the <strong>low-voltage compartment</strong> — the high-voltage side stays closed.</p>
+
+  <div class="callout"><span>⚡</span><div><strong>Breaker off before touching the COM block.</strong>
+  And if the old ScreenLogic wireless transceiver is still plugged into the COM port, unplug it for good —
+  its +15&nbsp;V budget now feeds the Orange&nbsp;Pi.</div></div>
+
+  <figure>
+    <div class="fig-scroll">
+    <svg viewBox="0 105 940 410" role="img" aria-label="Wiring diagram: EasyTouch COM port red and black wires feed a 1 A fuse and PlusRoc buck converter that powers the Orange Pi over USB-C; yellow and green data wires and black ground run to the SH-U10 RS-485 adapter, which plugs into the Pi's OTG port through a USB-C adapter. The SH-U10's 5V0 terminal stays empty.">
+      <defs>
+        <marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path d="M0,0 L10,5 L0,10 z" fill="var(--accent)"/>
+        </marker>
+      </defs>
+      <g fill="none" stroke="currentColor" stroke-width="1.4">
+        <!-- EasyTouch panel -->
+        <rect x="24" y="120" width="180" height="360" rx="10"/>
+        <rect x="150" y="180" width="54" height="248" rx="6"/>
+      </g>
+      <text x="114" y="152" text-anchor="middle" font-size="16" font-weight="600" fill="currentColor">EasyTouch</text>
+      <text x="114" y="171" text-anchor="middle" font-size="12" fill="currentColor" opacity=".62">load center · LV side</text>
+      <text x="177" y="200" text-anchor="middle" font-size="11" fill="currentColor" opacity=".62">COM</text>
+
+      <!-- COM terminals -->
+      <g font-size="12" font-weight="600">
+        <rect x="160" y="214" width="34" height="24" rx="4" fill="var(--wire-r)"/>
+        <text x="177" y="230" text-anchor="middle" fill="var(--chip-ink)">RED</text>
+        <rect x="160" y="266" width="34" height="24" rx="4" fill="var(--wire-y)"/>
+        <text x="177" y="282" text-anchor="middle" fill="var(--chip-ink)">YEL</text>
+        <rect x="160" y="318" width="34" height="24" rx="4" fill="var(--wire-g)"/>
+        <text x="177" y="334" text-anchor="middle" fill="var(--chip-ink)">GRN</text>
+        <rect x="160" y="370" width="34" height="24" rx="4" fill="var(--wire-k)"/>
+        <text x="177" y="386" text-anchor="middle" fill="var(--chip-ink)">BLK</text>
+      </g>
+      <g font-size="11" fill="currentColor" opacity=".62">
+        <text x="140" y="230" text-anchor="end">+15 V</text>
+        <text x="140" y="282" text-anchor="end">DATA+</text>
+        <text x="140" y="334" text-anchor="end">DATA−</text>
+        <text x="140" y="386" text-anchor="end">GND</text>
+      </g>
+
+      <!-- fuse -->
+      <g fill="none" stroke="var(--wire-r)" stroke-width="2.5">
+        <line x1="194" y1="226" x2="268" y2="226"/>
+        <line x1="322" y1="226" x2="388" y2="184"/>
+      </g>
+      <rect x="268" y="212" width="54" height="28" rx="6" fill="none" stroke="currentColor" stroke-width="1.4"/>
+      <text x="295" y="231" text-anchor="middle" font-size="11.5" font-weight="600" fill="currentColor">1 A</text>
+      <text x="295" y="204" text-anchor="middle" font-size="11" fill="currentColor" opacity=".62">fuse</text>
+
+      <!-- black wire: junction, up to buck, down to SH-U10 -->
+      <g fill="none" stroke="var(--wire-k)" stroke-width="2.5">
+        <line x1="194" y1="382" x2="356" y2="382"/>
+        <line x1="356" y1="382" x2="356" y2="214"/>
+        <line x1="356" y1="214" x2="388" y2="214"/>
+        <line x1="356" y1="382" x2="356" y2="452"/>
+        <line x1="356" y1="452" x2="388" y2="452"/>
+      </g>
+      <circle cx="356" cy="382" r="4" fill="var(--wire-k)"/>
+
+      <!-- yellow + green data wires -->
+      <g fill="none" stroke-width="2.5">
+        <path d="M194,278 L310,278 L310,404 L388,404" stroke="var(--wire-y)"/>
+        <path d="M194,330 L280,330 L280,428 L388,428" stroke="var(--wire-g)"/>
+      </g>
+
+      <!-- PlusRoc buck -->
+      <g fill="none" stroke="currentColor" stroke-width="1.4">
+        <rect x="388" y="160" width="216" height="86" rx="10"/>
+      </g>
+      <text x="496" y="190" text-anchor="middle" font-size="15" font-weight="600" fill="currentColor">PlusRoc buck</text>
+      <text x="496" y="209" text-anchor="middle" font-size="11.5" fill="currentColor" opacity=".62">8–32 V in → 5 V / 3 A out</text>
+      <text x="400" y="188" font-size="11" font-weight="600" fill="var(--wire-r)">＋</text>
+      <text x="400" y="220" font-size="11" font-weight="600" fill="currentColor" opacity=".8">−</text>
+
+      <!-- buck USB-C to Zero PWR -->
+      <line x1="604" y1="203" x2="716" y2="203" stroke="var(--accent)" stroke-width="2.5" marker-end="url(#arr)"/>
+      <text x="660" y="192" text-anchor="middle" font-size="11.5" font-weight="600" fill="var(--accent)">5 V USB-C</text>
+
+      <!-- SH-U10 -->
+      <g fill="none" stroke="currentColor" stroke-width="1.4">
+        <rect x="388" y="376" width="216" height="120" rx="10"/>
+      </g>
+      <text x="496" y="399" text-anchor="middle" font-size="15" font-weight="600" fill="currentColor">SH-U10 RS-485</text>
+      <g font-size="11.5" font-weight="600">
+        <text x="400" y="408" fill="var(--wire-y)">A+</text>
+        <text x="400" y="432" fill="var(--wire-g)">B−</text>
+        <text x="400" y="456" fill="currentColor" opacity=".8">GND</text>
+      </g>
+      <text x="400" y="480" font-size="11.5" font-weight="600" fill="currentColor" opacity=".55">5V0</text>
+      <text x="430" y="480" font-size="11.5" fill="var(--wire-r)" font-weight="600">✕ leave empty</text>
+
+      <!-- SH-U10 USB-A via OTG to Zero -->
+      <line x1="604" y1="436" x2="648" y2="436" stroke="var(--accent)" stroke-width="2.5"/>
+      <rect x="648" y="420" width="46" height="32" rx="6" fill="none" stroke="currentColor" stroke-width="1.4"/>
+      <text x="671" y="440" text-anchor="middle" font-size="10.5" font-weight="600" fill="currentColor">OTG</text>
+      <line x1="694" y1="436" x2="716" y2="436" stroke="var(--accent)" stroke-width="2.5" marker-end="url(#arr)"/>
+      <text x="660" y="410" text-anchor="middle" font-size="11.5" font-weight="600" fill="var(--accent)">USB-A</text>
+
+      <!-- Orange Pi -->
+      <g fill="none" stroke="currentColor" stroke-width="1.4">
+        <rect x="716" y="150" width="200" height="330" rx="12"/>
+      </g>
+      <text x="816" y="174" text-anchor="middle" font-size="16" font-weight="600" fill="currentColor">Orange Pi</text>
+      <text x="816" y="193" text-anchor="middle" font-size="12" fill="currentColor" opacity=".62">Zero 2W</text>
+      <g font-size="11.5" font-weight="600" fill="currentColor">
+        <rect x="716" y="188" width="10" height="30" rx="3" fill="var(--accent)"/>
+        <text x="738" y="207">USB-C · PWR</text>
+        <rect x="716" y="421" width="10" height="30" rx="3" fill="var(--accent)"/>
+        <text x="738" y="440">USB-C · OTG</text>
+      </g>
+      <text x="816" y="300" text-anchor="middle" font-size="12" fill="currentColor" opacity=".62">njsPC · dashboard</text>
+      <text x="816" y="318" text-anchor="middle" font-size="12" fill="currentColor" opacity=".62">joins WiFi on boot</text>
+    </svg>
+    </div>
+    <figcaption>Power path (top): COM +15 V through the 1 A fuse into the buck, USB-C into the Pi's corner power port.
+    Data path (bottom): yellow/green pair plus ground into the SH-U10, USB-A through the OTG adapter into the other port.</figcaption>
+  </figure>
+
+  <h2>Terminal map</h2>
+  <div class="tbl-card">
+  <table>
+    <thead><tr><th>EasyTouch COM</th><th>Carries</th><th>Goes to</th></tr></thead>
+    <tbody>
+      <tr><td><span class="chip r">RED</span></td><td>+15 V</td><td>1 A fuse → PlusRoc <strong>＋ input</strong></td></tr>
+      <tr><td><span class="chip k">BLK</span></td><td>Ground</td><td>PlusRoc <strong>− input</strong> <span class="via">and</span> SH-U10 <strong>GND</strong></td></tr>
+      <tr><td><span class="chip y">YEL</span></td><td>DATA+</td><td>SH-U10 <strong>A+</strong></td></tr>
+      <tr><td><span class="chip g">GRN</span></td><td>DATA−</td><td>SH-U10 <strong>B−</strong></td></tr>
+      <tr><td class="via">—</td><td class="via">SH-U10 <span class="mono">5V0</span> terminal</td><td class="via">nothing — leave disconnected</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <h2>Hook up &amp; test</h2>
+  <ol class="steps">
+    <li><div><h3>Bench check the SH-U10 first</h3>
+      <p>Meter in ohms across <strong>A+ ↔ B−</strong>. A reading near <strong>120 Ω</strong> means an onboard
+      terminator — since this taps an existing bus mid-span, consider lifting that resistor before install;
+      at minimum, remember it if comms errors show up later.</p></div></li>
+    <li><div><h3>Breaker off, land the wires — but not the buck's input yet</h3>
+      <p>Per the diagram and table: data pair + ground to the SH-U10 (one CAT5e twisted pair for
+      yellow/green), red through the fuse, black run in place. Leave the <strong>buck's ＋/− input leads
+      unconnected</strong> for now, and <span class="mono">5V0</span> on the SH-U10 stays empty.</p></div></li>
+    <li><div><h3>Breaker on — qualify the rail before the buck ever sees it</h3>
+      <p>DC volts, COM <strong>red ↔ black</strong>: expect roughly <strong>15 V to low-20s</strong>.
+      <strong>Abort if over 30 V</strong> (the buck's ceiling is 32).</p></div></li>
+    <li><div><h3>Breaker off, connect the buck — then verify its output</h3>
+      <p>Land the buck's ＋/− (double-check they aren't swapped), breaker back on, and confirm
+      <strong>5.0–5.2 V</strong> at its USB-C output <em>before</em> the Pi touches it. Not optional —
+      this is what protects the Pi.</p></div></li>
+    <li><div><h3>Plug in the Pi</h3>
+      <p>Buck's USB-C → the <strong>power port — the same port that powered it on the bench</strong>.
+      SH-U10 → OTG adapter → the other USB-C. SD card in; it boots and joins WiFi on its own.
+      <strong>Never plug in a wall charger while the buck is connected</strong> — one power source at a time.</p></div></li>
+    <li><div><h3>Open the dashboard — and let njsPC finish waking up</h3>
+      <p>On your phone: <code>http://192.168.1.221:8080</code>. First boot at the pad takes a while —
+      njsPC recompiles at startup (several minutes on this chip). Wait until the header stops saying
+      <em>njsPC unreachable</em>. Success = it then names your <strong>EasyTouch</strong> and real
+      temperatures appear.</p></div></li>
+    <li><div><h3>njsPC up but still "Nixie" after ~3 more minutes? Swap the pair</h3>
+      <p>Breaker off, swap <strong>yellow ↔ green at the SH-U10</strong> (A+ ↔ B−), power back up.
+      Polarity is the only wiring variable — one of the two ways works. Don't swap until njsPC itself
+      is reachable, or you'll be "fixing" wiring that was right all along.</p></div></li>
+  </ol>
+
+  <div class="done">
+    <strong class="ok-mark">✓ When the EasyTouch shows up</strong>
+    <ul>
+      <li>Tell Claude — the remaining milestones run over SSH: RS-485 error rate under 5%, circuit toggle, pump &amp; chlorinator control.</li>
+      <li>Weak WiFi at the pad? Route the antenna outside the metal enclosure before anything else.</li>
+      <li>The IC40 slider, pump speed sliders, and history charts populate on their own once data flows.</li>
+    </ul>
+  </div>
+</div>
