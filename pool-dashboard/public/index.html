@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pool</title>
+<link rel="stylesheet" href="style.css">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💧</text></svg>">
+</head>
+<body>
+<header class="topbar">
+  <div class="brand">
+    <span class="drop">💧</span>
+    <div>
+      <h1>Pool</h1>
+      <div class="sub" id="modelLine">connecting…</div>
+    </div>
+  </div>
+  <div class="top-right">
+    <span class="conn" id="connDot" title="njsPC link"></span>
+    <span class="clock" id="clock"></span>
+  </div>
+</header>
+
+<main class="grid">
+
+  <!-- HERO: water temp -->
+  <section class="card hero-card">
+    <div class="label" id="heroLabel">Pool temperature</div>
+    <div class="hero"><span id="heroTemp">--</span><span class="hero-unit" id="heroUnit">°F</span></div>
+    <div class="hero-meta">
+      <span id="heroAir">Air --°</span>
+      <span class="dot-sep"></span>
+      <span id="heroHeat">–</span>
+    </div>
+  </section>
+
+  <!-- Pump -->
+  <section class="card">
+    <div class="card-head"><div class="label">Pump</div><span class="pill" id="pumpStatus">–</span></div>
+    <div class="stat-row">
+      <div class="stat"><div class="stat-label">Speed</div><div class="stat-value" id="pumpRpm">--</div><div class="stat-sub">RPM</div></div>
+      <div class="stat"><div class="stat-label">Power</div><div class="stat-value" id="pumpWatts">--</div><div class="stat-sub">watts</div></div>
+      <div class="stat"><div class="stat-label">Today</div><div class="stat-value" id="costToday">--</div><div class="stat-sub" id="costSub">-- kWh · -- h</div></div>
+    </div>
+  </section>
+
+  <!-- Chlorinator -->
+  <section class="card">
+    <div class="card-head"><div class="label">Chlorinator · IC40</div><span class="pill" id="chlorStatus">–</span></div>
+    <div class="stat-row">
+      <div class="stat"><div class="stat-label">Salt</div><div class="stat-value" id="saltPpm">--</div><div class="stat-sub">ppm</div></div>
+      <div class="stat grow">
+        <div class="stat-label">Output <span id="chlorPctLabel" class="accent-num">--%</span></div>
+        <div class="slider-row">
+          <input type="range" id="chlorSlider" min="0" max="100" step="1" value="0" disabled>
+          <button class="btn" id="chlorApply" disabled>Set</button>
+        </div>
+      </div>
+    </div>
+    <div class="empty-note" id="chlorEmpty" hidden>No chlorinator reported yet — appears when the panel is on the bus.</div>
+  </section>
+
+  <!-- Filter row above charts -->
+  <div class="filter-row" id="rangeRow">
+    <button class="chip" data-hours="6">6h</button>
+    <button class="chip active" data-hours="12">12h</button>
+    <button class="chip" data-hours="24">24h</button>
+    <button class="chip" data-hours="168">7d</button>
+  </div>
+
+  <!-- Temperature chart -->
+  <section class="card chart-card">
+    <div class="card-head"><div class="label">Temperature</div>
+      <div class="legend">
+        <span class="key"><i style="background:var(--series-1)"></i>Pool</span>
+        <span class="key"><i style="background:var(--series-2)"></i>Air</span>
+      </div>
+    </div>
+    <div class="chart-wrap"><canvas id="tempChart"></canvas>
+      <div class="chart-empty" id="tempEmpty" hidden>Collecting data — temperatures appear once the panel reports them</div></div>
+  </section>
+
+  <!-- Pump power chart -->
+  <section class="card chart-card">
+    <div class="card-head"><div class="label">Pump power</div><span class="sub" id="wattsNowLbl"></span></div>
+    <div class="chart-wrap"><canvas id="wattsChart"></canvas>
+      <div class="chart-empty" id="wattsEmpty" hidden>Collecting data — pump watts appear once the pump reports</div></div>
+  </section>
+
+  <!-- Pump speed chart -->
+  <section class="card chart-card">
+    <div class="card-head"><div class="label">Pump speed</div><span class="sub" id="rpmNowLbl"></span></div>
+    <div class="chart-wrap"><canvas id="rpmChart"></canvas>
+      <div class="chart-empty" id="rpmEmpty" hidden>Collecting data — RPM appears once the pump reports</div></div>
+  </section>
+
+  <!-- Lights -->
+  <section class="card">
+    <div class="card-head"><div class="label">Lights</div></div>
+    <div id="lightsList" class="rows"></div>
+    <div class="empty-note" id="lightsEmpty" hidden>No light circuits reported yet.</div>
+  </section>
+
+  <!-- Circuits -->
+  <section class="card">
+    <div class="card-head"><div class="label">Circuits</div></div>
+    <div id="circuitsList" class="rows"></div>
+  </section>
+
+  <!-- Schedules -->
+  <section class="card sched-card">
+    <div class="card-head"><div class="label">Schedules</div></div>
+    <div id="schedList" class="rows"></div>
+    <div class="empty-note" id="schedEmpty" hidden>No schedules reported yet — they load from the panel.</div>
+  </section>
+
+  <!-- Settings -->
+  <section class="card">
+    <div class="card-head"><div class="label">Settings</div></div>
+    <div class="settings-row">
+      <label for="rateInput">Electricity rate $/kWh</label>
+      <input type="number" id="rateInput" min="0" max="5" step="0.001" value="0.15">
+      <button class="btn" id="rateSave">Save</button>
+    </div>
+  </section>
+
+</main>
+
+<div class="toast" id="toast" hidden></div>
+
+<script src="/vendor/chart.umd.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

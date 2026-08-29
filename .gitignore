@@ -1,0 +1,12 @@
+# OS images and archives (multi-GB — never in git)
+images/
+*.7z
+*.img
+*.crdownload
+
+# node
+node_modules/
+
+# dashboard runtime data (lives on the Zero, not in git)
+pool-dashboard/data.sqlite
+pool-dashboard/dashconfig.json
