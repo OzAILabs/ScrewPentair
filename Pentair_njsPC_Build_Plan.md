@@ -262,8 +262,9 @@ scenarios, in order of likelihood.
 
 ### A. SD card dies or corrupts (most likely — heat + power cuts)
 
-1. Get the backup: **`orangepi-pool-controller-2026-08-29.img.gz`** (~2 GB, on cloud
-   storage; MD5 recorded below). Any 32 GB card works — high-endurance preferred.
+1. Get the backup: **`orangepi-pool-controller-2026-08-29.img.gz`** (2.24 GB, on
+   **Google Drive in the `Poolstuff` folder**; MD5 recorded below). Any 32 GB card
+   works — high-endurance preferred.
 2. Flash it with **Raspberry Pi Imager** → "Use custom" → pick the `.img.gz` directly
    (no need to un-gzip) → target the card. CLI equivalent:
    `rpi-imager --cli <path>.img.gz \\.\PhysicalDriveN` (elevated).
@@ -315,7 +316,7 @@ factory `orangepi` password — update them when production passwords land.
 | Captured | 2026-08-29, post-verification state (EasyTouch live, all services under PM2) |
 | Contents | Full 29.7 GB card image, free space zeroed, gzip -1 · **2.25 GB** (2,410,471,826 bytes) |
 | MD5 | `40c60d11c2511b3a205ee9595fa18f98` |
-| Stored | User's cloud storage + `images\` locally until uploaded |
+| Stored | **Google Drive → `Poolstuff` folder** (also in `images\` locally) |
 | Notes | e2fsck clean at capture. Source card has bad sectors in the unpartitioned tail (CRC on raw read; tail zero-padded — no data affected). **Recommend flashing this image to the high-endurance card and retiring the old camera card.** |
 
 ---

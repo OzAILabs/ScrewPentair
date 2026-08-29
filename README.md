@@ -28,7 +28,7 @@ Orange Pi Zero 2W (vendor Ubuntu Noble, kernel held), all services under PM2:
 
 ## Recovery
 
-Flash `orangepi-pool-controller-<date>.img.gz` (cloud storage) to any 32 GB card
+Flash `orangepi-pool-controller-<date>.img.gz` (Google Drive → `Poolstuff`) to any 32 GB card
 with Raspberry Pi Imager and boot — WiFi, services, and config are all baked in.
 Full procedure, including hardware-swap and from-scratch rebuild:
 **[build plan §9a](Pentair_njsPC_Build_Plan.md#9a-recovery-procedure)**.
