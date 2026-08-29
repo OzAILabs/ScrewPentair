@@ -1,0 +1,59 @@
+{
+  "part": "pool-enclosure-lid",
+  "issues": [],
+  "is_valid": true,
+  "bbox": {
+    "size_x": 105.0,
+    "size_y": 155.0,
+    "size_z": 10.5,
+    "min": [
+      -52.5,
+      -77.5,
+      0.0
+    ],
+    "max": [
+      52.5,
+      77.5,
+      10.5
+    ]
+  },
+  "volume_mm3": 48449.332,
+  "step_file": "C:\\AI Stuff\\Claude\\ScrewPentair\\cad_out\\pool-enclosure-lid.step",
+  "stl_file": "C:\\AI Stuff\\Claude\\ScrewPentair\\cad_out\\pool-enclosure-lid.stl",
+  "measurements": {
+    "plate": {
+      "type": "plate",
+      "size_x": 105.0,
+      "size_y": 155.0,
+      "size_z": 2.5,
+      "min": [
+        -52.5,
+        -77.5,
+        0.0
+      ],
+      "max": [
+        52.5,
+        77.5,
+        2.5
+      ],
+      "volume": 40687.5
+    },
+    "skirt-blank": {
+      "type": "skirt",
+      "size_x": 99.6,
+      "size_y": 149.6,
+      "size_z": 9.0,
+      "min": [
+        -49.8,
+        -74.8,
+        1.5
+      ],
+      "max": [
+        49.8,
+        74.8,
+        10.5
+      ],
+      "volume": 134101.44
+    }
+  }
+}

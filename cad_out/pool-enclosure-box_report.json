@@ -1,0 +1,42 @@
+{
+  "part": "pool-enclosure-box",
+  "issues": [],
+  "is_valid": true,
+  "bbox": {
+    "size_x": 105.0,
+    "size_y": 155.0,
+    "size_z": 44.5,
+    "min": [
+      -52.5,
+      -77.5,
+      0.0
+    ],
+    "max": [
+      52.5,
+      77.5,
+      44.5
+    ]
+  },
+  "volume_mm3": 90947.412,
+  "step_file": "C:\\AI Stuff\\Claude\\ScrewPentair\\cad_out\\pool-enclosure-box.step",
+  "stl_file": "C:\\AI Stuff\\Claude\\ScrewPentair\\cad_out\\pool-enclosure-box.stl",
+  "measurements": {
+    "outer-shell": {
+      "type": "outer",
+      "size_x": 105.0,
+      "size_y": 155.0,
+      "size_z": 44.5,
+      "min": [
+        -52.5,
+        -77.5,
+        0.0
+      ],
+      "max": [
+        52.5,
+        77.5,
+        44.5
+      ],
+      "volume": 724237.5
+    }
+  }
+}
