@@ -313,9 +313,10 @@ factory `orangepi` password — update them when production passwords land.
 |---|---|
 | File | `orangepi-pool-controller-2026-08-29.img.gz` |
 | Captured | 2026-08-29, post-verification state (EasyTouch live, all services under PM2) |
-| Contents | Full 29.7 GB card image, free space zeroed, gzip -1 |
-| MD5 | _fill in from the imaging run output_ |
+| Contents | Full 29.7 GB card image, free space zeroed, gzip -1 · **2.25 GB** (2,410,471,826 bytes) |
+| MD5 | `40c60d11c2511b3a205ee9595fa18f98` |
 | Stored | User's cloud storage + `images\` locally until uploaded |
+| Notes | e2fsck clean at capture. Source card has bad sectors in the unpartitioned tail (CRC on raw read; tail zero-padded — no data affected). **Recommend flashing this image to the high-endurance card and retiring the old camera card.** |
 
 ---
 
