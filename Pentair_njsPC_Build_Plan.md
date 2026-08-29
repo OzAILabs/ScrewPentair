@@ -255,6 +255,70 @@ Work through these in order. Each one should pass before moving on.
 
 ---
 
+## 9a. Recovery procedure
+
+Everything that matters lives on the SD card; the panel holds its own config. Three
+scenarios, in order of likelihood.
+
+### A. SD card dies or corrupts (most likely — heat + power cuts)
+
+1. Get the backup: **`orangepi-pool-controller-2026-08-29.img.gz`** (~2 GB, on cloud
+   storage; MD5 recorded below). Any 32 GB card works — high-endurance preferred.
+2. Flash it with **Raspberry Pi Imager** → "Use custom" → pick the `.img.gz` directly
+   (no need to un-gzip) → target the card. CLI equivalent:
+   `rpi-imager --cli <path>.img.gz \\.\PhysicalDriveN` (elevated).
+3. Insert into the Zero at the pad, power up. Nothing else to do: WiFi credentials
+   are baked in, PM2 resurrects njsPC + dashboard + dashPanel on boot
+   (allow several minutes — njsPC recompiles at startup).
+4. Verify: `http://192.168.1.221:8080` names the EasyTouch and the RS-485 footer is
+   green. If the IP differs, the router assigned a new lease — check the router's
+   client list (hostname `orangepizero2w`), and set a **DHCP reservation** for the
+   Zero's MAC to pin 192.168.1.221 permanently (recommended).
+5. Caveats: telemetry history restores only to the backup date (the sampler resumes
+   on its own); on a larger-than-32 GB card the extra space sits unused unless
+   manually expanded (`sudo growpart` + `resize2fs`) — harmless to skip.
+
+### B. Orange Pi hardware dies
+
+Buy another Zero 2W (2 GB), move the SD card (or flash a fresh card per A), reattach
+the antenna and the two USB-C connections per [docs/pad-day-hookup.html](docs/pad-day-hookup.html).
+All identity and config is on the card — the board is a commodity.
+
+### C. No usable backup — rebuild from scratch
+
+All source and scripts are in this repo ([tools/](tools/)) plus the vendor image:
+
+1. Vendor Ubuntu Noble desktop image: pristine `.7z` per §Phase 0 (re-download from
+   Orange Pi's Google Drive if lost). Flash, then bake WiFi in by loop-mounting the
+   `.img` in WSL and writing `/etc/NetworkManager/system-connections/pool-wifi.nmconnection`
+   (chmod 600, root:root) — see §Phase 0 status notes for the exact file content.
+2. Boot, SSH in (`orangepi`/`orangepi` unless changed), hold the kernel:
+   `sudo apt-mark hold linux-image-next-sun50iw9 linux-dtb-next-sun50iw9`
+3. Run [tools/setup_njspc.sh](tools/setup_njspc.sh) (nvm + Node LTS + njsPC clone +
+   npm install), then [tools/setup_dashpanel_pm2.sh](tools/setup_dashpanel_pm2.sh)
+   (dashPanel + PM2 + pm2 save), then as root:
+   `pm2 startup systemd -u orangepi --hp /home/orangepi` (run the command it prints).
+4. Deploy the dashboard from this repo: [tools/deploy_dashboard.py](tools/deploy_dashboard.py)
+   (edit HOST/PASS at top if changed), then on the Zero:
+   `cd ~/pool-dashboard && npm install && pm2 start server.js --name dashboard && pm2 save`.
+5. njsPC serial port is `/dev/ttyUSB0` by default — no config needed with the SH-U10.
+
+[tools/zssh.py](tools/zssh.py) runs any command on the Zero from Windows
+(`python tools/zssh.py [--user root] "command"`). **Note:** helper scripts carry the
+factory `orangepi` password — update them when production passwords land.
+
+### Backup artifact record
+
+| Item | Value |
+|---|---|
+| File | `orangepi-pool-controller-2026-08-29.img.gz` |
+| Captured | 2026-08-29, post-verification state (EasyTouch live, all services under PM2) |
+| Contents | Full 29.7 GB card image, free space zeroed, gzip -1 |
+| MD5 | _fill in from the imaging run output_ |
+| Stored | User's cloud storage + `images\` locally until uploaded |
+
+---
+
 ## 10. Preserved artifacts from the failed adapter
 
 Keep these — they are the only path back to a working Protocol Adapter if one is ever wanted.

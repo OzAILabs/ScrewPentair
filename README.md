@@ -15,7 +15,20 @@ wired straight into the EasyTouch RS-485 bus — plus a custom modern dashboard.
   hero water temp, pump RPM/watts with real energy cost, IC40 salt + output slider,
   light color themes, circuit toggles, schedules, history charts.
 
+- **[docs/pad-day-hookup.html](docs/pad-day-hookup.html)** — wiring diagram and
+  hookup/test sequence for the panel connection.
+- **[tools/](tools/)** — helper scripts: `zssh.py` (run commands on the Zero from
+  Windows), `deploy_dashboard.py` (SFTP deploy), `setup_njspc.sh` /
+  `setup_dashpanel_pm2.sh` (from-scratch provisioning).
+
 ## Deployment target
 
 Orange Pi Zero 2W (vendor Ubuntu Noble, kernel held), all services under PM2:
 `njsPC` (:4200), `dashPanel` (:5150, diagnostic), `dashboard` (:8080).
+
+## Recovery
+
+Flash `orangepi-pool-controller-<date>.img.gz` (cloud storage) to any 32 GB card
+with Raspberry Pi Imager and boot — WiFi, services, and config are all baked in.
+Full procedure, including hardware-swap and from-scratch rebuild:
+**[build plan §9a](Pentair_njsPC_Build_Plan.md#9a-recovery-procedure)**.
