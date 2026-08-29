@@ -227,6 +227,8 @@ Confirmed from the njsPC README as supported for this setup:
 
 Work through these in order. Each one should pass before moving on.
 
+> ✅ **2026-08-29 — BUS IS LIVE, SYSTEM WORKS.** Temp-wired at the panel: njsPC identified the **EasyTouch2 4P** (state 100%), IntelliFlo VS and IntelliChlor IC40 both reporting. Verified from the custom dashboard: pool circuit toggle turns real equipment on/off (milestone 8 ✓), pump runs its programmed 1,900 RPM at ~490 W with live watts logged (9 ✓), IC40 reports Ok at 40% output with salt 2,650 ppm (10 read-side ✓; setpoint-change test pending), water temp goes live with flow. Milestones 4–9 and 11 ✓. Remaining: 10 write-side, 12 (windowed RS-485 error-rate check), permanent wiring/mounting, SD image backup of final state. This build replaced Pentair's ~$1,200 "upgrade kit" path.
+
 1. Zero boots on vendor Ubuntu, WiFi associates and stays up
 2. Kernel held, SD image backed up
 3. Node 20+ installed and reporting correct version
