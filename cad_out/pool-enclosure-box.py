@@ -13,7 +13,8 @@ OUT_H = IN_H + 2 * WALL          # 155.0
 OUT_D = IN_D + WALL              # 44.5 (back closed, front open)
 
 PIPE_DIA = 21.0
-PIPE_Z = WALL + IN_D / 2         # 2.5 + 21 = 23.5 (centered in depth)
+PIPE_EDGE_FROM_BACK = 10.0       # hole's near edge to the box's back exterior face
+PIPE_Z = PIPE_EDGE_FROM_BACK + PIPE_DIA / 2   # 10 + 10.5 = 20.5
 
 SLOT_W = 6.5                     # X
 SLOT_H = 42.0                    # Y
