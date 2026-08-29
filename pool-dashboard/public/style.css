@@ -91,6 +91,30 @@ body {
 .stat-sub { color: var(--muted); font-size: 11.5px; margin-top: 2px; }
 .accent-num { color: var(--ink); font-weight: 650; }
 
+/* wheel picker (drum) */
+.wheel-row { display: flex; align-items: center; gap: 8px; margin-top: 6px; }
+.wheel {
+  position: relative; height: 96px; width: 96px; overflow: hidden;
+  border-radius: 12px; background: var(--surface-2); border: 1px solid var(--border);
+  touch-action: none; cursor: grab; user-select: none;
+  -webkit-mask-image: linear-gradient(to bottom, transparent, #000 26%, #000 74%, transparent);
+          mask-image: linear-gradient(to bottom, transparent, #000 26%, #000 74%, transparent);
+}
+.wheel:active { cursor: grabbing; }
+.wheel-track { position: absolute; left: 0; right: 0; top: 0; will-change: transform; }
+.wheel-item {
+  height: 32px; display: flex; align-items: center; justify-content: center;
+  font-size: 17px; font-weight: 600; color: var(--ink-2);
+  font-variant-numeric: tabular-nums;
+}
+.wheel::after {
+  content: ""; position: absolute; left: 10px; right: 10px; top: 50%; height: 32px;
+  transform: translateY(-50%); pointer-events: none;
+  border-top: 1px solid rgba(57,135,229,.55); border-bottom: 1px solid rgba(57,135,229,.55);
+}
+.wheel-suffix { color: var(--muted); font-size: 13px; font-weight: 600; }
+.wheel.disabled { opacity: .45; pointer-events: none; }
+
 /* slider */
 .slider-row { display: flex; align-items: center; gap: 10px; margin-top: 8px; }
 input[type=range] {
@@ -225,6 +249,18 @@ input[type=range]:disabled::-webkit-slider-thumb { border-color: var(--baseline)
 .prog-row .pval { flex: 0 0 76px; text-align: right; font-size: 13.5px; font-weight: 600;
                   font-variant-numeric: tabular-nums; }
 .prog-row .pval .u { color: var(--muted); font-weight: 400; font-size: 11px; margin-left: 2px; }
+
+/* bus health footer */
+.bus-footer {
+  grid-column: 1 / -1;
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  color: var(--muted); font-size: 12px; padding: 6px 0 0;
+  font-variant-numeric: tabular-nums;
+}
+.bus-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--muted); }
+.bus-dot.good { background: var(--good); }
+.bus-dot.warn { background: var(--warning); }
+.bus-dot.bad  { background: var(--critical); }
 
 /* toast */
 .toast {

@@ -37,18 +37,21 @@ const qSince = db.prepare('SELECT COUNT(*) AS n, SUM(watts) AS sumWatts FROM sam
 /* ---------------- njsPC state mirror ---------------- */
 let state = null;            // last full /state/all payload
 let config = null;           // last full /config/all payload (pump speed programs live here)
+let rs485 = null;            // last /state/rs485Port/0 stats
 let njspcOk = false;
 let lastStateAt = 0;
 
 async function refreshState() {
   try {
-    const [rs, rc] = await Promise.all([
+    const [rs, rc, rp] = await Promise.all([
       fetch(cfg.njspcUrl + '/state/all', { signal: AbortSignal.timeout(8000) }),
-      fetch(cfg.njspcUrl + '/config/all', { signal: AbortSignal.timeout(8000) })
+      fetch(cfg.njspcUrl + '/config/all', { signal: AbortSignal.timeout(8000) }),
+      fetch(cfg.njspcUrl + '/state/rs485Port/0', { signal: AbortSignal.timeout(8000) }).catch(() => null)
     ]);
     if (!rs.ok) throw new Error('http ' + rs.status);
     state = await rs.json();
     if (rc.ok) config = await rc.json();
+    if (rp && rp.ok) rs485 = await rp.json();
     njspcOk = true;
     lastStateAt = Date.now();
     broadcast();
@@ -142,7 +145,15 @@ function summarize() {
                daysVal: sc.scheduleDays, heatSource: sc.heatSource,
                isOn: !!st.isOn };
     }),
-    kwhRate: cfg.kwhRate
+    kwhRate: cfg.kwhRate,
+    rs485: rs485 && rs485.received ? {
+      isOpen: !!rs485.isOpen,
+      packets: rs485.received.success,
+      failed: rs485.received.failed,
+      collisions: rs485.received.collisions,
+      failureRate: rs485.received.failureRate,
+      sentRetries: rs485.sent ? rs485.sent.retries : 0
+    } : null
   };
 }
 

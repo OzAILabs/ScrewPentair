@@ -59,10 +59,10 @@
     <div class="stat-row">
       <div class="stat"><div class="stat-label">Salt</div><div class="stat-value" id="saltPpm">--</div><div class="stat-sub">ppm</div></div>
       <div class="stat grow">
-        <div class="stat-label">Output <span id="chlorPctLabel" class="accent-num">--%</span></div>
-        <div class="slider-row">
-          <input type="range" id="chlorSlider" min="0" max="100" step="1" value="0" disabled>
-          <button class="btn" id="chlorApply" disabled>Set</button>
+        <div class="stat-label">Output</div>
+        <div class="wheel-row">
+          <div class="wheel" id="chlorWheel"></div>
+          <span class="wheel-suffix">%</span>
         </div>
       </div>
     </div>
@@ -133,6 +133,12 @@
       <button class="btn" id="rateSave">Save</button>
     </div>
   </section>
+
+  <!-- Bus health footer -->
+  <footer class="bus-footer" id="busFooter" hidden>
+    <span class="bus-dot" id="busDot"></span>
+    <span id="busText">RS-485 —</span>
+  </footer>
 
 </main>
 

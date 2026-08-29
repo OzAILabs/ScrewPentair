@@ -7,7 +7,105 @@
 
   let cur = null;           // latest summarized state
   let rangeHours = 12;
-  let chlorDirty = false;   // user touching slider — don't overwrite from state
+
+  /* ---------- drum wheel picker (smooth phone-friendly value control) ---------- */
+  function makeWheel(host, opts) {
+    const ITEM_H = 32;
+    const { min, max, step, format = v => v, onCommit } = opts;
+    const count = Math.floor((max - min) / step) + 1;
+    const track = document.createElement('div');
+    track.className = 'wheel-track';
+    for (let i = 0; i < count; i++) {
+      const d = document.createElement('div');
+      d.className = 'wheel-item';
+      d.textContent = format(min + i * step);
+      track.appendChild(d);
+    }
+    host.appendChild(track);
+    const centerOff = () => host.clientHeight / 2 - ITEM_H / 2;
+    let value = opts.value != null ? opts.value : min;
+    let pos = (value - min) / step;      // fractional index
+    let vel = 0, raf = null, commitTimer = null;
+    const api = { active: false, el: host };
+
+    const paint = () => { track.style.transform = `translateY(${centerOff() - pos * ITEM_H}px)`; };
+    const clampPos = p => Math.max(-0.4, Math.min(count - 1 + 0.4, p));
+    function finish() {
+      const v = min + Math.round(Math.max(0, Math.min(count - 1, pos))) * step;
+      api.active = false;
+      if (v !== value) {
+        value = v;
+        clearTimeout(commitTimer);
+        commitTimer = setTimeout(() => onCommit && onCommit(value), 450);
+      }
+    }
+    function settle() {
+      const target = Math.max(0, Math.min(count - 1, Math.round(pos)));
+      cancelAnimationFrame(raf);
+      const anim = () => {
+        pos += (target - pos) * 0.28;
+        if (Math.abs(target - pos) < 0.01) { pos = target; paint(); finish(); return; }
+        paint(); raf = requestAnimationFrame(anim);
+      };
+      raf = requestAnimationFrame(anim);
+    }
+    let lastY = 0, lastT = 0;
+    host.addEventListener('pointerdown', e => {
+      e.preventDefault(); host.setPointerCapture(e.pointerId);
+      api.active = true; cancelAnimationFrame(raf); vel = 0;
+      lastY = e.clientY; lastT = performance.now();
+    });
+    host.addEventListener('pointermove', e => {
+      if (!api.active) return;
+      const dy = e.clientY - lastY, t = performance.now();
+      vel = dy / Math.max(1, t - lastT) * 16;
+      lastY = e.clientY; lastT = t;
+      pos = clampPos(pos - dy / ITEM_H);
+      paint();
+    });
+    const release = () => {
+      if (!api.active) return;
+      const momentum = () => {
+        vel *= 0.94;
+        pos = clampPos(pos - vel / ITEM_H);
+        paint();
+        if (Math.abs(vel) > 0.5) raf = requestAnimationFrame(momentum);
+        else settle();
+      };
+      raf = requestAnimationFrame(momentum);
+    };
+    host.addEventListener('pointerup', release);
+    host.addEventListener('pointercancel', release);
+    host.addEventListener('wheel', e => {
+      e.preventDefault(); api.active = true;
+      pos = clampPos(Math.round(pos) + Math.sign(e.deltaY));
+      paint(); settle();
+    }, { passive: false });
+
+    api.set = v => { if (api.active || v == null) return; value = v; pos = (v - min) / step; paint(); };
+    api.get = () => value;
+    paint();
+    requestAnimationFrame(paint);
+    return api;
+  }
+
+  /* ---------- water temp -> color (user spec: >=86 red, ~73 blueish, <=65 blue) ---------- */
+  function tempColor(t) {
+    const stops = [[65, 215], [73, 195], [79, 55], [83, 28], [86, 2]];
+    let h;
+    if (t <= stops[0][0]) h = stops[0][1];
+    else if (t >= stops[stops.length - 1][0]) h = stops[stops.length - 1][1];
+    else {
+      for (let i = 1; i < stops.length; i++) {
+        if (t <= stops[i][0]) {
+          const [t0, h0] = stops[i - 1], [t1, h1] = stops[i];
+          h = h0 + (h1 - h0) * (t - t0) / (t1 - t0);
+          break;
+        }
+      }
+    }
+    return `hsl(${Math.round(h)} 82% 58%)`;
+  }
 
   /* ---------- helpers ---------- */
   const fmt1 = n => (n == null ? '--' : Math.round(n * 10) / 10);
@@ -123,7 +221,9 @@
     $('heroUnit').textContent = unit;
     $('heroLabel').textContent = (s.body ? s.body.name : 'Pool') + ' temperature' +
       (s.body && s.body.temp != null && !s.body.tempIsLive ? ' (last reading)' : '');
-    $('heroTemp').textContent = s.body && s.body.temp != null ? fmt1(s.body.temp) : '--';
+    const wtemp = s.body && s.body.temp != null ? s.body.temp : null;
+    $('heroTemp').textContent = wtemp != null ? fmt1(wtemp) : '--';
+    $('heroTemp').style.color = wtemp != null ? tempColor(wtemp) : '';
     $('heroAir').textContent = `Air ${s.airTemp != null ? fmt1(s.airTemp) + unit : '--'}`;
     $('heroHeat').textContent = s.body && s.body.heatStatus ? `Heater: ${s.body.heatStatus}` : 'Heater: –';
 
@@ -150,11 +250,30 @@
     $('chlorEmpty').hidden = !!c;
     $('chlorStatus').textContent = c ? (c.status || '–') : 'none yet';
     $('saltPpm').textContent = c && c.saltLevel != null ? fmt0(c.saltLevel) : '--';
-    const slider = $('chlorSlider'), apply = $('chlorApply');
-    slider.disabled = apply.disabled = !c;
-    if (c && !chlorDirty) {
-      slider.value = c.poolSetpoint != null ? c.poolSetpoint : 0;
-      syncSlider();
+    $('chlorWheel').classList.toggle('disabled', !c);
+    if (c) {
+      if (!chlorWheel) {
+        chlorWheel = makeWheel($('chlorWheel'), {
+          min: 0, max: 100, step: 1, value: c.poolSetpoint || 0,
+          onCommit: async v => {
+            try {
+              await put('/njspc/state/chlorinator/setChlor', { id: cur.chlorinator.id, poolSetpoint: v });
+              toast(`Chlorinator set to ${v}%`);
+            } catch { toast('Failed to set chlorinator', false); }
+          }
+        });
+      } else chlorWheel.set(c.poolSetpoint);
+    }
+
+    // bus health footer
+    const r = s.rs485;
+    $('busFooter').hidden = !r;
+    if (r) {
+      const rate = r.failureRate || 0;
+      $('busDot').className = 'bus-dot ' + (!r.isOpen || rate >= 5 ? 'bad' : rate >= 1 ? 'warn' : 'good');
+      $('busText').textContent =
+        `RS-485 · ${rate.toFixed(2)}% errors · ${fmt0(r.packets)} packets · ${r.collisions} collisions` +
+        (r.isOpen ? '' : ' · PORT CLOSED');
     }
 
     renderPumpPrograms(s);
@@ -164,15 +283,24 @@
   }
 
   /* ---------- pump programmed speeds (the panel's circuit-speed table) ---------- */
-  let progsDragging = false;
+  let chlorWheel = null;
+  let progWheels = [];
   let progsKey = '';
   function renderPumpPrograms(s) {
     const progs = s.pumpPrograms || [];
     $('progsBlock').hidden = progs.length === 0;
-    if (!progs.length) { progsKey = ''; return; }
-    const key = JSON.stringify(progs);
-    if (progsDragging || key === progsKey) return;   // don't fight the user's thumb
+    if (!progs.length) { progsKey = ''; progWheels = []; return; }
+    const key = JSON.stringify(progs.map(p => [p.circuitId, p.units]));
+    if (progWheels.some(w => w.active)) return;       // don't fight the user's thumb
+    if (key === progsKey) {                            // same rows — just sync values
+      progs.forEach((p, i) => {
+        const v = (p.units || '').toLowerCase().includes('gpm') ? p.flow : p.speed;
+        if (progWheels[i]) progWheels[i].set(v);
+      });
+      return;
+    }
     progsKey = key;
+    progWheels = [];
     const host = $('pumpProgs');
     host.innerHTML = '';
     for (const p of progs) {
@@ -183,39 +311,24 @@
       row.className = 'prog-row';
       row.innerHTML = `
         <span class="pname" title="${p.name}">${p.name}</span>
-        <input type="range" min="${min}" max="${max}" step="${step}" value="${val ?? min}">
-        <span class="pval"><span class="v">${val != null ? val.toLocaleString() : '--'}</span><span class="u">${unit}</span></span>`;
-      const slider = row.querySelector('input');
-      const vlabel = row.querySelector('.v');
-      const paint = () => {
-        slider.style.setProperty('--fill', (100 * (slider.value - min) / (max - min)) + '%');
-        vlabel.textContent = parseInt(slider.value, 10).toLocaleString();
-      };
-      paint();
-      slider.addEventListener('pointerdown', () => { progsDragging = true; });
-      slider.addEventListener('input', () => { progsDragging = true; paint(); });
-      slider.addEventListener('pointerup', () => {   // change (if any) fires first
-        setTimeout(() => { progsDragging = false; }, 400);
+        <div class="wheel-row"><div class="wheel"></div><span class="wheel-suffix">${unit}</span></div>`;
+      const wheel = makeWheel(row.querySelector('.wheel'), {
+        min, max, step, value: val != null ? val : min,
+        format: v => v.toLocaleString(),
+        onCommit: async v => {
+          try {
+            const body = { pumpId: cur.pump.id, circuitId: p.circuitId };
+            body[isFlow ? 'flow' : 'speed'] = v;
+            await put('/njspc/config/pumpCircuit', body);
+            toast(`${p.name}: ${v.toLocaleString()} ${unit}`);
+          } catch { toast(`Failed to set ${p.name}`, false); }
+        }
       });
-      slider.addEventListener('change', async () => {
-        const v = parseInt(slider.value, 10);
-        try {
-          const body = { pumpId: cur.pump.id, circuitId: p.circuitId };
-          body[isFlow ? 'flow' : 'speed'] = v;
-          await put('/njspc/config/pumpCircuit', body);
-          toast(`${p.name}: ${v.toLocaleString()} ${unit}`);
-        } catch { toast(`Failed to set ${p.name}`, false); }
-        progsDragging = false; progsKey = '';   // allow next state to re-sync
-      });
+      progWheels.push(wheel);
       host.appendChild(row);
     }
   }
 
-  function syncSlider() {
-    const slider = $('chlorSlider');
-    slider.style.setProperty('--fill', slider.value + '%');
-    $('chlorPctLabel').textContent = slider.value + '%';
-  }
   $('poolBtn').addEventListener('click', async () => {
     const pc = cur && cur.poolCircuit;
     if (!pc) return;
@@ -223,15 +336,6 @@
       await put('/njspc/state/circuit/setState', { id: pc.id, state: !pc.isOn });
       toast(pc.isOn ? 'Pool turning off' : 'Pool turning on');
     } catch { toast('Pool toggle failed', false); }
-  });
-
-  $('chlorSlider').addEventListener('input', () => { chlorDirty = true; syncSlider(); });
-  $('chlorApply').addEventListener('click', async () => {
-    try {
-      await put('/njspc/state/chlorinator/setChlor', { id: cur.chlorinator.id, poolSetpoint: parseInt($('chlorSlider').value, 10) });
-      chlorDirty = false;
-      toast(`Chlorinator set to ${$('chlorSlider').value}%`);
-    } catch (e) { toast('Failed to set chlorinator', false); }
   });
 
   /* ---------- lights ---------- */
