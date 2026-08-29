@@ -6,7 +6,8 @@
   const INK2 = css('--ink-2'), MUTED = css('--muted'), GRID = css('--grid'), SURF = css('--surface-1');
 
   let cur = null;           // latest summarized state
-  let rangeHours = 12;
+  let rangeHours = 24;
+  let histTs = [];          // raw timestamps behind the current chart points
 
   /* ---------- drum wheel picker (smooth phone-friendly value control) ---------- */
   function makeWheel(host, opts) {
@@ -135,7 +136,43 @@
   Chart.defaults.font.family = 'system-ui, -apple-system, "Segoe UI", sans-serif';
   Chart.defaults.color = MUTED;
 
-  const baseOpts = () => ({
+  /* Axis ticks land on clean wall-clock boundaries (hours, days, months)
+     instead of wherever the data points happen to fall. Unlabeled points
+     render an empty string, so Chart.js spaces them without crowding. */
+  const hourLabel = d => d.toLocaleTimeString([], { hour: 'numeric' });
+  const fullStamp = d => d.toLocaleString([], {
+    month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit'
+  });
+
+  function makeLabels(rows, hours) {
+    const out = new Array(rows.length).fill('');
+    let prevKey = null;
+    for (let i = 0; i < rows.length; i++) {
+      const d = new Date(rows[i].ts);
+      let key = null, text = '';
+      if (hours <= 8) {                                   // every hour
+        key = `${d.getDate()}h${d.getHours()}`; text = hourLabel(d);
+      } else if (hours <= 36) {                           // every 4 hours
+        if (d.getHours() % 4 === 0) { key = `${d.getDate()}h${d.getHours()}`; text = hourLabel(d); }
+      } else if (hours <= 24 * 10) {                      // every day
+        key = `${d.getMonth()}d${d.getDate()}`;
+        text = d.toLocaleDateString([], { weekday: 'short' });
+      } else if (hours <= 24 * 45) {                      // every 5th day
+        if (d.getDate() % 5 === 1) { key = `${d.getMonth()}d${d.getDate()}`;
+          text = d.toLocaleDateString([], { month: 'short', day: 'numeric' }); }
+      } else if (hours <= 24 * 200) {                     // 1st and 16th
+        if (d.getDate() === 1 || d.getDate() === 16) { key = `${d.getMonth()}d${d.getDate()}`;
+          text = d.toLocaleDateString([], { month: 'short', day: 'numeric' }); }
+      } else {                                            // every month
+        key = `${d.getFullYear()}m${d.getMonth()}`;
+        text = d.toLocaleDateString([], { month: 'short' });
+      }
+      if (key && key !== prevKey) { out[i] = text; prevKey = key; }
+    }
+    return out;
+  }
+
+  const baseOpts = (extra = {}) => ({
     responsive: true, maintainAspectRatio: false, animation: false,
     interaction: { mode: 'index', intersect: false },
     plugins: {
@@ -143,14 +180,23 @@
       tooltip: {
         backgroundColor: '#232322', borderColor: 'rgba(255,255,255,.12)', borderWidth: 1,
         titleColor: INK2, bodyColor: '#fff', padding: 10, displayColors: true,
-        boxWidth: 8, boxHeight: 8, usePointStyle: true
+        boxWidth: 8, boxHeight: 8, usePointStyle: true,
+        callbacks: {
+          title: items => items.length && histTs[items[0].dataIndex]
+            ? fullStamp(new Date(histTs[items[0].dataIndex])) : ''
+        }
       }
     },
     scales: {
-      x: { grid: { display: false }, border: { color: GRID },
-           ticks: { maxTicksLimit: 6, maxRotation: 0, color: MUTED } },
+      x: {
+        // vertical guide only where a tick is actually labeled
+        grid: { display: true, drawTicks: false,
+                color: ctx => (ctx.tick && ctx.tick.label ? GRID : 'transparent') },
+        border: { color: GRID },
+        ticks: { autoSkip: false, maxRotation: 0, color: MUTED, font: { size: 11 } }
+      },
       y: { grid: { color: GRID, lineWidth: 1 }, border: { display: false },
-           ticks: { maxTicksLimit: 5, color: MUTED } }
+           ticks: { maxTicksLimit: 5, color: MUTED }, ...(extra.y || {}) }
     }
   });
 
@@ -172,36 +218,65 @@
     type: 'line', data: { labels: [], datasets: [lineSeries('RPM', C1)] }, options: baseOpts()
   });
 
+  // Pentair's ideal IntelliChlor salt window, drawn behind the line
+  const SALT_LO = 2800, SALT_HI = 3400;
+  const saltBand = {
+    id: 'saltBand',
+    beforeDatasetsDraw(chart) {
+      const { ctx, chartArea, scales } = chart;
+      if (!scales.y || !chartArea) return;
+      const a = scales.y.getPixelForValue(SALT_HI), b = scales.y.getPixelForValue(SALT_LO);
+      const top = Math.max(chartArea.top, Math.min(a, b));
+      const bot = Math.min(chartArea.bottom, Math.max(a, b));
+      if (bot <= top) return;
+      ctx.save();
+      ctx.fillStyle = 'rgba(12,163,12,0.10)';
+      ctx.fillRect(chartArea.left, top, chartArea.right - chartArea.left, bot - top);
+      ctx.restore();
+    }
+  };
+  const saltChart = new Chart($('saltChart'), {
+    type: 'line',
+    data: { labels: [], datasets: [{ ...lineSeries('Salt', C1), fill: false }] },
+    options: baseOpts({ y: { suggestedMin: 2600, suggestedMax: 3500,
+                             ticks: { maxTicksLimit: 5, color: MUTED,
+                                      callback: v => v.toLocaleString() } } }),
+    plugins: [saltBand]
+  });
+
   function setEmpty(chart, emptyId, isEmpty) {
     document.getElementById(emptyId).hidden = !isEmpty;
     chart.canvas.parentElement.classList.toggle('is-empty', isEmpty);
   }
 
   async function loadHistory() {
-    const rows = await api(`/api/history?hours=${rangeHours}`);
-    const labels = rows.map(r => {
-      const d = new Date(r.ts);
-      return rangeHours > 48
-        ? d.toLocaleDateString([], { month: 'short', day: 'numeric' })
-        : d.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
-    });
+    const res = await api(`/api/history?hours=${rangeHours}`);
+    const rows = res.rows || [];
+    histTs = rows.map(r => r.ts);
+    const labels = makeLabels(rows, res.hours || rangeHours);
     const any = k => rows.some(r => r[k] != null);
+    const col = k => rows.map(r => (r[k] != null ? Math.round(r[k] * 10) / 10 : null));
 
     tempChart.data.labels = labels;
-    tempChart.data.datasets[0].data = rows.map(r => r.poolTemp);
-    tempChart.data.datasets[1].data = rows.map(r => r.airTemp);
+    tempChart.data.datasets[0].data = col('poolTemp');
+    tempChart.data.datasets[1].data = col('airTemp');
     tempChart.update();
     setEmpty(tempChart, 'tempEmpty', !any('poolTemp') && !any('airTemp'));
 
     wattsChart.data.labels = labels;
-    wattsChart.data.datasets[0].data = rows.map(r => r.watts);
+    wattsChart.data.datasets[0].data = col('watts');
     wattsChart.update();
     setEmpty(wattsChart, 'wattsEmpty', !any('watts'));
 
     rpmChart.data.labels = labels;
-    rpmChart.data.datasets[0].data = rows.map(r => r.rpm);
+    rpmChart.data.datasets[0].data = col('rpm');
     rpmChart.update();
     setEmpty(rpmChart, 'rpmEmpty', !any('rpm'));
+
+    saltChart.data.labels = labels;
+    saltChart.data.datasets[0].data = col('saltPpm');
+    saltChart.update();
+    setEmpty(saltChart, 'saltEmpty', !any('saltPpm'));
   }
 
   $('rangeRow').addEventListener('click', e => {
@@ -250,6 +325,7 @@
     $('chlorEmpty').hidden = !!c;
     $('chlorStatus').textContent = c ? (c.status || '–') : 'none yet';
     $('saltPpm').textContent = c && c.saltLevel != null ? fmt0(c.saltLevel) : '--';
+    $('saltNowLbl').textContent = c && c.saltLevel != null ? `${fmt0(c.saltLevel)} ppm now` : '';
     $('chlorWheel').classList.toggle('disabled', !c);
     if (c) {
       if (!chlorWheel) {

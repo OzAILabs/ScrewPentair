@@ -31,8 +31,19 @@ db.exec(`CREATE TABLE IF NOT EXISTS samples (
 )`);
 const insSample = db.prepare(
   'INSERT OR REPLACE INTO samples (ts, poolTemp, airTemp, rpm, watts, chlorPct, saltPpm) VALUES (?,?,?,?,?,?,?)');
-const qHistory = db.prepare('SELECT * FROM samples WHERE ts >= ? ORDER BY ts ASC');
 const qSince = db.prepare('SELECT COUNT(*) AS n, SUM(watts) AS sumWatts FROM samples WHERE ts >= ? AND watts > 0');
+
+/* Retention: keep a year of minute samples (~525k rows, a few tens of MB).
+   ts is INTEGER PRIMARY KEY, so range scans and the purge are both cheap. */
+const RETAIN_DAYS = 365;
+const qPurge = db.prepare('DELETE FROM samples WHERE ts < ?');
+function purgeOld() {
+  const cutoff = Date.now() - RETAIN_DAYS * 24 * 3600 * 1000;
+  const info = qPurge.run(cutoff);
+  if (info.changes) console.log(`retention: purged ${info.changes} samples older than ${RETAIN_DAYS}d`);
+}
+purgeOld();
+setInterval(purgeOld, 24 * 3600 * 1000);
 
 /* ---------------- njsPC state mirror ---------------- */
 let state = null;            // last full /state/all payload
@@ -192,26 +203,23 @@ app.get('/api/events', (req, res) => {
   req.on('close', () => clients.delete(res));
 });
 
+/* Bucketed history. Averaging happens in SQL so a 1-year query touches
+   ~500k rows in C and returns ~400 — never materialized in JS. */
+const MINUTE = 60000;
 app.get('/api/history', (req, res) => {
-  const hours = Math.min(parseFloat(req.query.hours) || 12, 24 * 14);
-  const rows = qHistory.all(Date.now() - hours * 3600 * 1000);
-  // downsample to <= ~360 points so long ranges stay light
-  const maxPts = 360;
-  let out = rows;
-  if (rows.length > maxPts) {
-    const bucket = Math.ceil(rows.length / maxPts);
-    out = [];
-    for (let i = 0; i < rows.length; i += bucket) {
-      const slice = rows.slice(i, i + bucket);
-      const avg = k => {
-        const vals = slice.map(r => r[k]).filter(x => x != null);
-        return vals.length ? vals.reduce((a, b) => a + b, 0) / vals.length : null;
-      };
-      out.push({ ts: slice[Math.floor(slice.length / 2)].ts, poolTemp: avg('poolTemp'), airTemp: avg('airTemp'),
-                 rpm: avg('rpm'), watts: avg('watts'), chlorPct: avg('chlorPct'), saltPpm: avg('saltPpm') });
-    }
-  }
-  res.json(out);
+  const hours = Math.min(Math.max(parseFloat(req.query.hours) || 24, 0.25), 24 * 400);
+  const spanMs = hours * 3600 * 1000;
+  const targetPts = 400;
+  // bucket = whole minutes, so buckets align to sample cadence
+  const bucketMs = Math.max(MINUTE, Math.round(spanMs / targetPts / MINUTE) * MINUTE);
+  const rows = db.prepare(
+    `SELECT (ts / ${bucketMs}) * ${bucketMs} AS ts,
+            AVG(poolTemp) AS poolTemp, AVG(airTemp) AS airTemp,
+            AVG(rpm) AS rpm, AVG(watts) AS watts,
+            AVG(chlorPct) AS chlorPct, AVG(saltPpm) AS saltPpm
+     FROM samples WHERE ts >= ? GROUP BY 1 ORDER BY 1`
+  ).all(Date.now() - spanMs);
+  res.json({ bucketMs, hours, rows });
 });
 
 app.get('/api/summary', (req, res) => {

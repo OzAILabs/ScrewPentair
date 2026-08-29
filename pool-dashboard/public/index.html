@@ -72,9 +72,11 @@
   <!-- Filter row above charts -->
   <div class="filter-row" id="rangeRow">
     <button class="chip" data-hours="6">6h</button>
-    <button class="chip active" data-hours="12">12h</button>
-    <button class="chip" data-hours="24">24h</button>
+    <button class="chip active" data-hours="24">24h</button>
     <button class="chip" data-hours="168">7d</button>
+    <button class="chip" data-hours="720">30d</button>
+    <button class="chip" data-hours="2160">90d</button>
+    <button class="chip" data-hours="8760">1y</button>
   </div>
 
   <!-- Temperature chart -->
@@ -101,6 +103,14 @@
     <div class="card-head"><div class="label">Pump speed</div><span class="sub" id="rpmNowLbl"></span></div>
     <div class="chart-wrap"><canvas id="rpmChart"></canvas>
       <div class="chart-empty" id="rpmEmpty" hidden>Collecting data — RPM appears once the pump reports</div></div>
+  </section>
+
+  <!-- Salt chart -->
+  <section class="card chart-card">
+    <div class="card-head"><div class="label">Salt level</div><span class="sub" id="saltNowLbl"></span></div>
+    <div class="chart-wrap"><canvas id="saltChart"></canvas>
+      <div class="chart-empty" id="saltEmpty" hidden>Collecting data — salt reports while the pump is running</div></div>
+    <div class="chart-note">Shaded band = Pentair's ideal range for IntelliChlor, 2,800–3,400 ppm</div>
   </section>
 
   <!-- Lights -->
