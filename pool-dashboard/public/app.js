@@ -642,19 +642,21 @@
     $('tripMark').style.left = (((trip - 30) / span) * 100) + '%';
     $('tripLabel').textContent = `${trip}° throttle`;
 
+    // Every meter reads "<pct> used" and its subtitle states used-of-total in the
+    // same direction, so the bar, the number and the bytes never disagree.
     meter('cpuBar', 'cpuVal', 'cpuSub', s.cpuPct,
-      s.cpuPct != null ? s.cpuPct.toFixed(0) + '%' : '--',
+      s.cpuPct != null ? s.cpuPct.toFixed(0) + '% busy' : '--',
       s.cpuCores && s.cpuCores.length ? 'cores ' + s.cpuCores.map(c => c.toFixed(0) + '%').join(' · ') : '–');
 
     const m = s.mem;
     meter('memBar', 'memVal', 'memSub', m ? m.pct : null,
-      m ? m.pct.toFixed(0) + '%' : '--',
-      m ? `${fmtBytes(m.avail)} free of ${fmtBytes(m.total)}` : '–');
+      m ? m.pct.toFixed(0) + '% used' : '--',
+      m ? `${fmtBytes(m.used)} used of ${fmtBytes(m.total)} · ${fmtBytes(m.avail)} free` : '–');
 
     const d = s.disk;
     meter('diskBar', 'diskVal', 'diskSub', d ? d.pct : null,
-      d ? d.pct.toFixed(0) + '%' : '--',
-      d ? `${fmtBytes(d.avail)} free of ${fmtBytes(d.total)}` : '–');
+      d ? d.pct.toFixed(0) + '% used' : '--',
+      d ? `${fmtBytes(d.used)} used of ${fmtBytes(d.total)} · ${fmtBytes(d.avail)} free` : '–');
 
     // signal: -30 dBm excellent .. -90 unusable
     const w = s.wifi;
