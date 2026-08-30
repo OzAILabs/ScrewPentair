@@ -145,12 +145,87 @@
   </section>
 
   <!-- Bus health footer -->
-  <footer class="bus-footer" id="busFooter" hidden>
-    <span class="bus-dot" id="busDot"></span>
-    <span id="busText">RS-485 —</span>
+  <footer class="bus-footer">
+    <span class="bus-line" id="busFooter" hidden>
+      <span class="bus-dot" id="busDot"></span>
+      <span id="busText">RS-485 —</span>
+    </span>
+    <button class="diag-btn" id="diagBtn">
+      <span class="diag-dot" id="diagDot"></span>Orange Pi diag
+    </button>
   </footer>
 
 </main>
+
+<!-- Orange Pi diagnostics -->
+<div class="modal-back" id="diagModal" hidden>
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="diagTitle">
+    <div class="modal-head">
+      <div>
+        <h2 id="diagTitle">Orange Pi diagnostics</h2>
+        <div class="sub" id="diagSub">reading sensors…</div>
+      </div>
+      <button class="icon-btn" id="diagClose" title="Close">✕</button>
+    </div>
+
+    <div class="modal-body">
+      <!-- temperature hero -->
+      <div class="diag-hero">
+        <div>
+          <div class="stat-label">CPU temperature</div>
+          <div class="diag-temp"><span id="diagTemp">--</span><span class="diag-unit">°C</span></div>
+          <div class="sub" id="diagTempSub">–</div>
+        </div>
+        <div class="diag-gauge">
+          <div class="gauge-track"><div class="gauge-fill" id="tempGauge"></div>
+            <div class="gauge-mark" id="tripMark" title="throttle point"></div></div>
+          <div class="gauge-scale"><span>30°</span><span id="tripLabel">85° throttle</span><span>100°</span></div>
+        </div>
+      </div>
+
+      <!-- meters -->
+      <div class="meters">
+        <div class="meter"><div class="meter-top"><span>CPU</span><span id="cpuVal">--</span></div>
+          <div class="meter-track"><div class="meter-fill" id="cpuBar"></div></div>
+          <div class="sub" id="cpuSub">–</div></div>
+        <div class="meter"><div class="meter-top"><span>Memory</span><span id="memVal">--</span></div>
+          <div class="meter-track"><div class="meter-fill" id="memBar"></div></div>
+          <div class="sub" id="memSub">–</div></div>
+        <div class="meter"><div class="meter-top"><span>SD card</span><span id="diskVal">--</span></div>
+          <div class="meter-track"><div class="meter-fill" id="diskBar"></div></div>
+          <div class="sub" id="diskSub">–</div></div>
+        <div class="meter"><div class="meter-top"><span>WiFi</span><span id="wifiVal">--</span></div>
+          <div class="meter-track"><div class="meter-fill" id="wifiBar"></div></div>
+          <div class="sub" id="wifiSub">–</div></div>
+      </div>
+
+      <!-- temp history -->
+      <div class="diag-chart-head">
+        <div class="label">Temperature history</div>
+        <div class="filter-row compact" id="diagRangeRow">
+          <button class="chip" data-hours="6">6h</button>
+          <button class="chip active" data-hours="24">24h</button>
+          <button class="chip" data-hours="168">7d</button>
+          <button class="chip" data-hours="720">30d</button>
+        </div>
+      </div>
+      <div class="chart-wrap small"><canvas id="diagTempChart"></canvas>
+        <div class="chart-empty" id="diagTempEmpty" hidden>Collecting data…</div></div>
+
+      <!-- detail table -->
+      <table class="diag-table">
+        <tbody>
+          <tr><th>Thermal zones</th><td id="dZones">–</td></tr>
+          <tr><th>Today's range</th><td id="dRange">–</td></tr>
+          <tr><th>CPU clock</th><td id="dFreq">–</td></tr>
+          <tr><th>Load average</th><td id="dLoad">–</td></tr>
+          <tr><th>Network</th><td id="dNet">–</td></tr>
+          <tr><th>Uptime</th><td id="dUptime">–</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
 
 <div class="toast" id="toast" hidden></div>
 

@@ -182,8 +182,11 @@
         titleColor: INK2, bodyColor: '#fff', padding: 10, displayColors: true,
         boxWidth: 8, boxHeight: 8, usePointStyle: true,
         callbacks: {
-          title: items => items.length && histTs[items[0].dataIndex]
-            ? fullStamp(new Date(histTs[items[0].dataIndex])) : ''
+          title: items => {
+            const src = extra.tsSource ? extra.tsSource() : histTs;
+            return items.length && src[items[0].dataIndex]
+              ? fullStamp(new Date(src[items[0].dataIndex])) : '';
+          }
         }
       }
     },
@@ -586,6 +589,157 @@
       toast('Rate saved'); loadSummary();
     } catch { toast('Save failed', false); }
   });
+
+  /* ---------- Orange Pi diagnostics ---------- */
+  const GOOD = css('--good'), WARNC = css('--warning'), CRIT = css('--critical');
+  let diagOpen = false, diagTimer = null, diagRange = 24, diagChart = null, lastSys = null;
+  let diagTs = [];          // the diag chart's own timestamps (separate range)
+
+  const fmtBytes = b => b == null ? '--'
+    : b >= 1073741824 ? (b / 1073741824).toFixed(1) + ' GB' : Math.round(b / 1048576) + ' MB';
+  const fmtDur = s => {
+    if (s == null) return '--';
+    const d = Math.floor(s / 86400), h = Math.floor((s % 86400) / 3600), m = Math.floor((s % 3600) / 60);
+    return d ? `${d}d ${h}h` : h ? `${h}h ${m}m` : `${m}m`;
+  };
+  // Thermal severity against the SoC's own trip points, not invented numbers
+  function tempSeverity(t, trip) {
+    if (t == null) return 'unknown';
+    if (t >= trip) return 'bad';
+    if (t >= trip - 15) return 'warn';        // within 15°C of throttling
+    return 'good';
+  }
+  const sevColor = s => s === 'bad' ? CRIT : s === 'warn' ? WARNC : GOOD;
+
+  function meter(barId, valId, subId, pct, text, sub, invert) {
+    const p = pct == null ? 0 : Math.max(0, Math.min(100, pct));
+    const bar = $(barId);
+    bar.style.width = p + '%';
+    // invert=true means HIGH is good (wifi); otherwise high is bad
+    const level = invert ? (p >= 55 ? 'good' : p >= 30 ? 'warn' : 'bad')
+                         : (p >= 90 ? 'bad' : p >= 75 ? 'warn' : 'good');
+    bar.style.background = sevColor(level);
+    $(valId).textContent = text;
+    $(subId).textContent = sub;
+  }
+
+  function renderSys(s) {
+    lastSys = s;
+    const trip = s.tripPassive || 85;
+    const sev = tempSeverity(s.temp, trip);
+    $('diagTemp').textContent = s.temp != null ? s.temp.toFixed(1) : '--';
+    $('diagTemp').style.color = sevColor(sev);
+    $('diagTempSub').textContent = s.temp == null ? '–'
+      : s.throttling ? `THROTTLING — at or above the ${trip}°C limit`
+      : `${(trip - s.temp).toFixed(1)}°C of headroom before throttling`;
+    $('diagSub').textContent = `sampled ${new Date(s.sampledAt).toLocaleTimeString()}`;
+
+    // gauge spans 30–100°C
+    const span = 100 - 30;
+    $('tempGauge').style.width = s.temp == null ? '0%'
+      : Math.max(0, Math.min(100, ((s.temp - 30) / span) * 100)) + '%';
+    $('tempGauge').style.background = sevColor(sev);
+    $('tripMark').style.left = (((trip - 30) / span) * 100) + '%';
+    $('tripLabel').textContent = `${trip}° throttle`;
+
+    meter('cpuBar', 'cpuVal', 'cpuSub', s.cpuPct,
+      s.cpuPct != null ? s.cpuPct.toFixed(0) + '%' : '--',
+      s.cpuCores && s.cpuCores.length ? 'cores ' + s.cpuCores.map(c => c.toFixed(0) + '%').join(' · ') : '–');
+
+    const m = s.mem;
+    meter('memBar', 'memVal', 'memSub', m ? m.pct : null,
+      m ? m.pct.toFixed(0) + '%' : '--',
+      m ? `${fmtBytes(m.avail)} free of ${fmtBytes(m.total)}` : '–');
+
+    const d = s.disk;
+    meter('diskBar', 'diskVal', 'diskSub', d ? d.pct : null,
+      d ? d.pct.toFixed(0) + '%' : '--',
+      d ? `${fmtBytes(d.avail)} free of ${fmtBytes(d.total)}` : '–');
+
+    // signal: -30 dBm excellent .. -90 unusable
+    const w = s.wifi;
+    const sigPct = w && w.signal != null ? Math.max(0, Math.min(100, ((w.signal + 90) / 60) * 100)) : null;
+    meter('wifiBar', 'wifiVal', 'wifiSub', sigPct,
+      w && w.signal != null ? w.signal + ' dBm' : '--',
+      w ? [w.ssid, w.bitrate ? w.bitrate + ' Mbit/s' : null].filter(Boolean).join(' · ') || '–' : '–', true);
+
+    $('dZones').textContent = s.zones && s.zones.length
+      ? s.zones.map(z => `${z.name} ${z.c.toFixed(1)}°`).join('   ') : '–';
+    $('dRange').textContent = s.tempTodayPeak != null
+      ? `${s.tempTodayLow.toFixed(1)}° low · ${s.tempTodayPeak.toFixed(1)}° peak`
+      : 'collecting…';
+    $('dFreq').textContent = s.freqMHz != null
+      ? `${fmt0(s.freqMHz)} of ${fmt0(s.freqMaxMHz)} MHz · ${s.governor || ''}` : '–';
+    $('dLoad').textContent = s.load ? s.load.map(x => x.toFixed(2)).join('  ') + '   (4 cores)' : '–';
+    $('dNet').textContent = w
+      ? `${w.iface}${w.freq ? ' · ' + (w.freq / 1000).toFixed(1) + ' GHz' : ''}${w.quality != null ? ' · link ' + w.quality : ''}`
+      : '–';
+    $('dUptime').textContent = `${fmtDur(s.uptimeSec)} since boot · dashboard up ${fmtDur(s.appUptimeSec)}`;
+
+    // footer dot mirrors thermal state even when the modal is closed
+    $('diagDot').className = 'diag-dot ' + (sev === 'unknown' ? '' : sev);
+  }
+
+  async function loadSys() {
+    try { renderSys(await api('/api/sysinfo')); } catch { $('diagSub').textContent = 'sensors unavailable'; }
+  }
+
+  async function loadDiagChart() {
+    if (!diagChart) {
+      diagChart = new Chart($('diagTempChart'), {
+        type: 'line', data: { labels: [], datasets: [lineSeries('CPU °C', C1)] },
+        options: baseOpts({ tsSource: () => diagTs,
+                            y: { ticks: { maxTicksLimit: 4, color: MUTED,
+                                          callback: v => v + '°' } } }),
+        plugins: [{
+          id: 'tripLine',
+          beforeDatasetsDraw(chart) {
+            const trip = (lastSys && lastSys.tripPassive) || 85;
+            const { ctx, chartArea, scales } = chart;
+            if (!scales.y || !chartArea) return;
+            const y = scales.y.getPixelForValue(trip);
+            if (y < chartArea.top || y > chartArea.bottom) return;
+            ctx.save();
+            ctx.strokeStyle = CRIT; ctx.lineWidth = 1; ctx.setLineDash([4, 4]);
+            ctx.beginPath(); ctx.moveTo(chartArea.left, y); ctx.lineTo(chartArea.right, y); ctx.stroke();
+            ctx.restore();
+          }
+        }]
+      });
+    }
+    const res = await api(`/api/history?hours=${diagRange}`);
+    const rows = res.rows || [];
+    diagTs = rows.map(r => r.ts);
+    diagChart.data.labels = makeLabels(rows, res.hours || diagRange);
+    diagChart.data.datasets[0].data = rows.map(r => r.cpuTemp != null ? Math.round(r.cpuTemp * 10) / 10 : null);
+    diagChart.update();
+    setEmpty(diagChart, 'diagTempEmpty', !rows.some(r => r.cpuTemp != null));
+  }
+
+  function openDiag() {
+    diagOpen = true;
+    $('diagModal').hidden = false;
+    loadSys(); loadDiagChart();
+    diagTimer = setInterval(loadSys, 5000);
+  }
+  function closeDiag() {
+    diagOpen = false;
+    $('diagModal').hidden = true;
+    clearInterval(diagTimer); diagTimer = null;
+  }
+  $('diagBtn').addEventListener('click', openDiag);
+  $('diagClose').addEventListener('click', closeDiag);
+  $('diagModal').addEventListener('click', e => { if (e.target === $('diagModal')) closeDiag(); });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape' && diagOpen) closeDiag(); });
+  $('diagRangeRow').addEventListener('click', e => {
+    const b = e.target.closest('.chip'); if (!b) return;
+    document.querySelectorAll('#diagRangeRow .chip').forEach(c => c.classList.toggle('active', c === b));
+    diagRange = parseFloat(b.dataset.hours);
+    loadDiagChart();
+  });
+  // keep the footer dot live without opening the modal
+  loadSys();
+  setInterval(() => { if (!diagOpen) loadSys(); }, 60000);
 
   /* ---------- live wiring ---------- */
   function connectSSE() {

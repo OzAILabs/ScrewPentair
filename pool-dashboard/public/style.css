@@ -21,6 +21,8 @@
 
 * { box-sizing: border-box; }
 html, body { margin: 0; padding: 0; }
+/* class selectors with `display` outrank the UA's [hidden] rule — this restores it */
+[hidden] { display: none !important; }
 body {
   background: var(--page);
   color: var(--ink);
@@ -254,10 +256,77 @@ input[type=range]:disabled::-webkit-slider-thumb { border-color: var(--baseline)
 /* bus health footer */
 .bus-footer {
   grid-column: 1 / -1;
-  display: flex; align-items: center; justify-content: center; gap: 8px;
+  display: flex; align-items: center; justify-content: center; gap: 16px;
+  flex-wrap: wrap;
   color: var(--muted); font-size: 12px; padding: 6px 0 0;
   font-variant-numeric: tabular-nums;
 }
+.bus-line { display: inline-flex; align-items: center; gap: 8px; }
+.diag-btn {
+  display: inline-flex; align-items: center; gap: 7px;
+  background: var(--surface-1); border: 1px solid var(--border); color: var(--ink-2);
+  border-radius: 999px; padding: 5px 13px; font-size: 12px; font-family: inherit;
+  cursor: pointer;
+}
+.diag-btn:hover { color: var(--ink); border-color: var(--baseline); }
+.diag-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--muted); }
+.diag-dot.good { background: var(--good); }
+.diag-dot.warn { background: var(--warning); }
+.diag-dot.bad  { background: var(--critical); }
+
+/* diagnostics modal */
+.modal-back {
+  position: fixed; inset: 0; background: rgba(0,0,0,.66);
+  display: flex; align-items: center; justify-content: center; padding: 16px; z-index: 50;
+}
+.modal {
+  background: var(--surface-1); border: 1px solid var(--border); border-radius: 18px;
+  width: min(620px, 100%); max-height: 88vh; overflow-y: auto;
+  box-shadow: 0 24px 70px rgba(0,0,0,.6);
+}
+.modal-head {
+  display: flex; align-items: flex-start; justify-content: space-between; gap: 12px;
+  padding: 18px 20px 12px; border-bottom: 1px solid var(--grid);
+  position: sticky; top: 0; background: var(--surface-1); border-radius: 18px 18px 0 0;
+}
+.modal-head h2 { margin: 0; font-size: 17px; font-weight: 650; }
+.modal-body { padding: 16px 20px 22px; display: flex; flex-direction: column; gap: 18px; }
+
+.diag-hero { display: flex; align-items: center; gap: 22px; flex-wrap: wrap; }
+.diag-temp { line-height: 1; margin: 4px 0 3px; }
+#diagTemp { font-size: 46px; font-weight: 650; }
+.diag-unit { font-size: 20px; color: var(--ink-2); margin-left: 3px; }
+.diag-gauge { flex: 1; min-width: 190px; }
+.gauge-track {
+  position: relative; height: 9px; border-radius: 5px; background: var(--baseline);
+  overflow: hidden;
+}
+.gauge-fill { height: 100%; width: 0; border-radius: 5px; transition: width .4s, background .4s; }
+.gauge-mark { position: absolute; top: -2px; width: 2px; height: 13px; background: var(--ink-2); opacity: .75; }
+.gauge-scale { display: flex; justify-content: space-between; color: var(--muted); font-size: 10.5px; margin-top: 5px; }
+
+.meters { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px 20px; }
+@media (max-width: 520px) { .meters { grid-template-columns: 1fr; } }
+.meter-top { display: flex; justify-content: space-between; align-items: baseline;
+             font-size: 12.5px; color: var(--ink-2); margin-bottom: 5px; }
+.meter-top span:last-child { font-weight: 650; color: var(--ink); font-variant-numeric: tabular-nums; }
+.meter-track { height: 7px; border-radius: 4px; background: var(--baseline); overflow: hidden; }
+.meter-fill { height: 100%; width: 0; background: var(--series-1); border-radius: 4px; transition: width .4s, background .4s; }
+.meter .sub { margin-top: 4px; }
+
+.diag-chart-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+.filter-row.compact { margin: 0; }
+.filter-row.compact .chip { padding: 4px 10px; font-size: 11.5px; }
+.chart-wrap.small { height: 150px; }
+
+.diag-table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+.diag-table th {
+  text-align: left; font-weight: 500; color: var(--muted); padding: 7px 0;
+  border-bottom: 1px solid var(--grid); width: 38%; vertical-align: top;
+}
+.diag-table td { padding: 7px 0; border-bottom: 1px solid var(--grid); color: var(--ink-2);
+                 font-variant-numeric: tabular-nums; }
+.diag-table tr:last-child th, .diag-table tr:last-child td { border-bottom: 0; }
 .bus-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--muted); }
 .bus-dot.good { background: var(--good); }
 .bus-dot.warn { background: var(--warning); }
