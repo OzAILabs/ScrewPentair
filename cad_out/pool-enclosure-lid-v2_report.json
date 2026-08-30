@@ -20,7 +20,7 @@
           10.5
         ]
       },
-      "volume_mm3": 47558.888,
+      "volume_mm3": 47693.737,
       "color": "#f5f5f0",
       "stl_file": "C:\\AI Stuff\\Claude\\ScrewPentair\\cad_out\\pool-enclosure-lid-v2-lid.stl"
     },
@@ -28,34 +28,34 @@
       "is_valid": true,
       "solid_count": 1,
       "bbox": {
-        "size_x": 44.532,
-        "size_y": 32.15,
+        "size_x": 40.385,
+        "size_y": 30.97,
         "size_z": 0.6,
         "min": [
-          -22.251,
-          17.52,
-          0.0
+          -20.208,
+          15.431,
+          -0.0
         ],
         "max": [
-          22.281,
-          49.67,
+          20.177,
+          46.401,
           0.6
         ]
       },
-      "volume_mm3": 444.662,
+      "volume_mm3": 385.133,
       "color": "#e8641b",
       "stl_file": "C:\\AI Stuff\\Claude\\ScrewPentair\\cad_out\\pool-enclosure-lid-v2-pi.stl"
     },
     "ink": {
       "is_valid": true,
-      "solid_count": 38,
+      "solid_count": 25,
       "bbox": {
         "size_x": 88.969,
-        "size_y": 37.42,
+        "size_y": 24.388,
         "size_z": 0.6,
         "min": [
           -44.487,
-          -43.43,
+          -30.398,
           -0.0
         ],
         "max": [
@@ -64,7 +64,7 @@
           0.6
         ]
       },
-      "volume_mm3": 445.781,
+      "volume_mm3": 370.463,
       "color": "#1a1a1a",
       "stl_file": "C:\\AI Stuff\\Claude\\ScrewPentair\\cad_out\\pool-enclosure-lid-v2-ink.stl"
     }
@@ -89,26 +89,26 @@
       10.5
     ]
   },
-  "assembly_volume_mm3": 48449.331,
+  "assembly_volume_mm3": 48449.333,
   "threemf_file": "C:\\AI Stuff\\Claude\\ScrewPentair\\cad_out\\pool-enclosure-lid-v2.3mf",
   "step_file": "C:\\AI Stuff\\Claude\\ScrewPentair\\cad_out\\pool-enclosure-lid-v2.step",
   "measurements": {
     "pi": {
       "type": "inlay",
-      "size_x": 44.532,
-      "size_y": 32.15,
+      "size_x": 40.385,
+      "size_y": 30.97,
       "size_z": 0.6,
       "min": [
-        -22.251,
-        17.52,
-        0.0
+        -20.208,
+        15.431,
+        -0.0
       ],
       "max": [
-        22.281,
-        49.67,
+        20.177,
+        46.401,
         0.6
       ],
-      "volume": 444.662
+      "volume": 385.133
     },
     "wordmark": {
       "type": "inlay",
@@ -143,23 +143,6 @@
         0.6
       ],
       "volume": 99.268
-    },
-    "tag2": {
-      "type": "inlay",
-      "size_x": 57.306,
-      "size_y": 6.532,
-      "size_z": 0.6,
-      "min": [
-        -28.754,
-        -43.43,
-        -0.0
-      ],
-      "max": [
-        28.552,
-        -36.898,
-        0.6
-      ],
-      "volume": 75.319
     }
   }
 }

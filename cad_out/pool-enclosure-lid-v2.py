@@ -29,10 +29,9 @@ WORD = "SCREWLOGIC"
 WORD_SIZE = 12.0
 WORD_Y = -10.0
 TAG1 = "PROTOCOL ADAPTER"
-TAG2 = "$1,160 CHEAPER"
 TAG_SIZE = 7.0
 TAG1_Y = -28.0
-TAG2_Y = -40.0
+PI_FONT = "Georgia"              # curvy serif pi, reads as a logo
 
 # --- Build the white lid (single solid) ---
 body = Box(OUT_W, OUT_H, PLATE_T, align=(Align.CENTER, Align.CENTER, Align.MIN))
@@ -63,12 +62,10 @@ corners = [e for e in z_edges
 body = safe_fillet(body, corners, CORNER_R, "plate-corners")
 
 # --- Artwork sketches (drawn reading-correct, then mirrored for face-down print) ---
-sk_pi = Pos(0, PI_Y) * Text("\u03c0", font_size=PI_SIZE, font="Arial",
+sk_pi = Pos(0, PI_Y) * Text("\u03c0", font_size=PI_SIZE, font=PI_FONT,
                             font_style=FontStyle.BOLD)
 sk_word = Pos(0, WORD_Y) * Text(WORD, font_size=WORD_SIZE, font="Arial Black")
 sk_tag1 = Pos(0, TAG1_Y) * Text(TAG1, font_size=TAG_SIZE, font="Arial",
-                                font_style=FontStyle.BOLD)
-sk_tag2 = Pos(0, TAG2_Y) * Text(TAG2, font_size=TAG_SIZE, font="Arial",
                                 font_style=FontStyle.BOLD)
 
 def inlay(sk, label):
@@ -81,14 +78,12 @@ def inlay(sk, label):
 pi_region, pi_tool = inlay(sk_pi, "pi")
 word_region, word_tool = inlay(sk_word, "wordmark")
 tag1_region, tag1_tool = inlay(sk_tag1, "tag1")
-tag2_region, tag2_tool = inlay(sk_tag2, "tag2")
 
 body = safe_cut(body, pi_tool, "pocket-pi")
 body = safe_cut(body, word_tool, "pocket-wordmark")
 body = safe_cut(body, tag1_tool, "pocket-tag1")
-body = safe_cut(body, tag2_tool, "pocket-tag2")
 
-ink = word_region + tag1_region + tag2_region
+ink = word_region + tag1_region
 
 if __name__ == "__main__":
     finalize_parts({
