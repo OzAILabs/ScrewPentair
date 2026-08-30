@@ -20,6 +20,12 @@ charts, energy cost tracking, and hardware diagnostics that ScreenLogic never dr
 | <img src="docs/img/electronics.jpg" alt="Electronics: SH-U10 RS-485 adapter, PlusRoc buck converter, OTG adapter, Orange Pi in case"> | <img src="docs/img/box-interior.jpg" alt="Everything mounted inside the 3D-printed enclosure, pipe fitting at the bottom"> |
 | The whole brain: Orange Pi Zero 2W (in the small black case), SH-U10 RS-485 adapter, PlusRoc 15&nbsp;V→5&nbsp;V buck | Everything inside the printed enclosure — the old transceiver's conduit carries power + data up from the panel |
 
+## The dashboard
+
+<p align="center">
+  <img src="docs/img/dashboard.png" width="900" alt="ScrewLogic dashboard: pool temperature, pump RPM/watts with energy cost, IC40 salt and output wheel, 24h charts for temperature, pump power, speed and salt, light color themes, circuits, editable schedules, RS-485 health footer">
+</p>
+
 ## What it does
 
 - **Full EasyTouch control** — circuits, schedules (create/edit/delete), heat modes, a big Pool
