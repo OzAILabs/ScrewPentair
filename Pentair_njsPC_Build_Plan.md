@@ -295,6 +295,12 @@ All source and scripts are in this repo ([tools/](tools/)) plus the vendor image
    (chmod 600, root:root) — see §Phase 0 status notes for the exact file content.
 2. Boot, SSH in (`orangepi`/`orangepi` unless changed), hold the kernel:
    `sudo apt-mark hold linux-image-next-sun50iw9 linux-dtb-next-sun50iw9`
+   Then fix the timezone — the vendor image ships UTC, and njsPC syncs the
+   panel clock to *server local time*, so a UTC Pi sets the panel 4-5h wrong:
+   `sudo timedatectl set-timezone America/New_York` (NTP via chrony is already
+   active). njsPC's clock source is `server` with DST adjust on
+   (`PUT /config/general {"options":{"clockSource":"server","adjustDST":true}}`);
+   force an immediate panel sync with `PUT /config/dateTime {"clockSource":"server"}`.
 3. Run [tools/setup_njspc.sh](tools/setup_njspc.sh) (nvm + Node LTS + njsPC clone +
    npm install), then [tools/setup_dashpanel_pm2.sh](tools/setup_dashpanel_pm2.sh)
    (dashPanel + PM2 + pm2 save), then as root:
